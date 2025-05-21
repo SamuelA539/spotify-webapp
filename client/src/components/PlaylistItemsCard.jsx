@@ -3,11 +3,11 @@ import { useEffect, useState } from "react"
 
 export default function PlaylistItemsCard({playlistData, playlistTracks}) {
     //get as inputs
-    // console.log(playlistData)
+    console.log(playlistData)
     const[offset, setOffset] = useState(0);
 
 
-    const[plalistItems, setPlaylistItems] = useState(playlistTracks.items == null ? {} : playlistTracks.items.map(trackInfo => 
+    const[playlistItems, setPlaylistItems] = useState(playlistTracks.items == null ? {} : playlistTracks.items.map(trackInfo => 
         <div key={trackInfo.track.id}>
             <input type="checkbox" id={`${trackInfo.track.id} box`}  value={
                 `${typeof trackInfo.track.name != 'undefined'? trackInfo.track.name : "track name error"} - 
@@ -42,8 +42,8 @@ export default function PlaylistItemsCard({playlistData, playlistTracks}) {
                 {/* <h6>Playlist: {playlistData.name}</h6>
                 <h6>Num Tracks: {playlistTracks.total}</h6> */}
                 
-                <form action="" method="post">
-                    {plalistItems.slice(offset, offset+6)}
+                <form action={`http://localhost:5000/playlist/toText/${playlistData.id}`} method="post">
+                    {playlistItems.slice(offset, offset+6)}
                     <button type="submit">toText</button>
                 </form>
 

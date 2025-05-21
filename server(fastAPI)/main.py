@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -19,6 +20,11 @@ API_BASE_URL = 'https://api.spotify.com/v1/'
 scope = 'playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-top-read'
 
 frontendURL='http://localhost:3000'
+
+
+class ToListenToBody(BaseModel):
+    songURI: str
+  
 
 app = FastAPI()
 
@@ -117,10 +123,13 @@ def refreshToken():
                 return True
     return False
 
-#in special dir on server? => scalable/user
-def makeTextFile(tracks, playlistName):
-    f = open(f"{playlistName}.txt", 'w')
+#in special dir? => scalable/user
+def makeTextFile(tracks: list, playlistName: str):
     
+    usrID = querySpotify('me')['id']
+    filename = playlistName.replace(' ', '_')
+    
+    f = open(f"{usrID}/{filename}.txt", 'w')
     f.write("Format: Song, album - artists \n\n")
     
     for track in tracks:
@@ -268,6 +277,19 @@ def callback(code: str | None = None):
         os.environ['Refresh_Token'] = str(token_info['refresh_token'])
         os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
 
+
+        #makeUser specific dir (if not exists )
+        dirs = os.scandir()
+        exists = False
+        usrID = querySpotify('me')['id']
+
+        for dir in dirs:
+            if (dir.name == usrID):
+                exists = True
+
+        if (not exists):
+            os.mkdir(usrID)
+        
 
         #print("Access Token Life: ", accessTokenTime)
         #return RedirectResponse(frontendURL+'/Home') #/profile 
@@ -440,10 +462,83 @@ def playlist(playlistID: str = ""):
 #libaray/playlists/{playlist_id} endpoint
 
 
-#TODO finish: make request body
+
+#TODO send file
 @app.post('/playlist/toText/{playlistID}')
-def toText(playlistID ):
+def toText(playlistID):
+    playlistInfo = querySpotify(f'playlists/{playlistID}')
+
+    if playlistInfo:
+        makeTextFile(playlistInfo['tracks']['items'], playlistInfo['name'])
+        return "text file made"
+    
     return 'coming soon'
+
+
+@app.post('/toListenTo') 
+    #recives: trackID, +playlistID?
+def addtoListenTo(data: ToListenToBody):
+    clidata = data.model_dump()
+
+    if clidata['songURI'] is not None:
+        toListenTo = ''
+        playlistInfo = querySpotify('me/playlists?limit=50')
+        authHeaders={'Authorization': 'Bearer '+ os.getenv('Access_Token') }
+
+    #finding toListenTo
+        while (toListenTo == '' and playlistInfo['next'] != None):
+            for playlist in playlistInfo['items']:
+                if (playlist["description"] == 'toListenTo'):
+                    toListenTo = playlist['id']
+                    break           
+            
+            #check resp code
+            playlistInfo = requests.get(playlistInfo['next'], headers=authHeaders).json()
+
+        #print("to listen to after while: ", toListenTo, "== \'\'", toListenTo == '')
+   
+    #creating playlist
+        if (toListenTo == ''): 
+            userID=querySpotify('me')['id']
+   
+            res = requests.post(
+                url= API_BASE_URL+f'users/{userID}/playlists', 
+                json= {
+                    "name":"toListenTo",
+                    "description":"toListenTo",
+                    "public":False
+                },
+                headers=authHeaders
+            )
+
+            if (199 < res.status_code < 300):
+                toListenTo = res.json()['id']
+                print("created: ", toListenTo)
+            else:
+                return {"error":"playlist creation", "msg":res.json()}
+
+        # add song to playlist
+        print("adding to:", toListenTo)
+        if (toListenTo != ''):
+
+            res = requests.post(
+                url=API_BASE_URL+f'playlists/{toListenTo}/tracks', 
+                json= {
+                    "uris": [clidata['songURI']]
+                }, 
+                headers=authHeaders
+            )
+            if (199 < res.status_code < 300):
+                return "success"
+            else:
+                return {"error": "addiing track", "msg": res.json()}
+    
+    return "error"
+
+@app.get('/search')
+def toListenTo(searchstr: str, type: str = "track", offset: int = 0):
+    itemInfo = querySpotify(f'search?q={searchstr}&type={type}&limit=50&offset={offset}')
+    return itemInfo
 
 if __name__ == "__main__":
     print("Note: .env loads once per run")

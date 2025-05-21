@@ -58,7 +58,7 @@ export default function PlaylistsPage() {
                 res.json()
                 .then(data => {
                     if (data !== null) { //alt not empty check
-                        //console.log(data)
+                        console.log('playlist ',data)
                         setPlaylistInfo(data)
                     }else if (typeof data.detail !== "undefined" && data.detail.length > 0){
                         console.log(data.detail[0].msg)
@@ -122,7 +122,7 @@ export default function PlaylistsPage() {
                                 setPlaylistID(playlist.id) 
                                 document.getElementById(`${playlist.id} content`).hidden = false
                                 btn.innerHTML = "Close Tracks"
-                            }else {
+                            } else {
                                 document.getElementById(`${playlist.id} content`).hidden = true
                                 btn.innerHTML = "See Tracks"
                                 //close PLaylst info 
