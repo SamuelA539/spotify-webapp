@@ -43,13 +43,16 @@ export default function SavedSongsPage() {
     }
 
     return (
-        <>  
-            <div className="text-center">
+        <article>  
+            
+            <section className="text-center">
                 <h2>Saved Songs</h2>
                 <h3>Total Saved Songs: {total}</h3> 
-            </div> <br/><hr/>
+            </section> 
+            
+            <br/><hr/>
 
-            <div id="btmNavBtns" className="text-center">
+            <section id="topNavBtns" className="text-center">
                 <p>{offset} - {offset + 50} of {total}</p>
 
                 <button id="prevBtn" onClick={()=> {
@@ -71,7 +74,9 @@ export default function SavedSongsPage() {
                     })
                     document.documentElement.scrollTop = 0
                 }} className="btn btn-secondary">  Next  </button>
-            </div> <hr/>
+            </section> 
+            
+            <hr/>
 
             <ul className="list-group">
                 {typeof songs != 'undefined'? 
@@ -87,7 +92,7 @@ export default function SavedSongsPage() {
                 }
             </ul>
 
-            <div id="btmNavBtns" className="text-center">
+            <section id="btmNavBtns" className="text-center">
                 <p>{offset} - {offset + 50} of {total}</p>
 
                 <button id="prevBtn" onClick={()=> {
@@ -109,9 +114,9 @@ export default function SavedSongsPage() {
                     })
                     document.documentElement.scrollTop = 0
                 }} className="btn btn-secondary">  Next  </button>
-            </div>  
+            </section>  
 
-        </>
+        </article>
     )
 
 }

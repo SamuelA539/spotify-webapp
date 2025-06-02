@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import NavBar from "../components/NavBar"
+import LoadingPage from "./LoadingPage"
 import TrackCard from "../components/TrackCard"
 export default function ToListenToPage() {
 
@@ -39,53 +39,72 @@ export default function ToListenToPage() {
 
     // }, [])
 
+    function handleToListenToClick(t) {
+        var uri = t.target.value
+        var body = JSON.stringify({songURI: t.target.value})
+
+        console.log('target: ',uri)
+        console.log('body: ', body)
+        //422 unprocessable Entity TODO read fastapi docs
+        fetch('http://localhost:5000/toListenTo', 
+            {
+                method:'POST', 
+                body: t.target.value
+            })
+        .then(res => {res.json()
+            .then(data => {
+                console.log(data)
+                if (data == 'success') {
+                    alert("Song Addded Successfuly")
+                } else {
+                    alert("Error Adding song")
+                }
+            })})
+        .catch(err => console.log(`toListenTo ${t.target.id} error: `, err))
+    }
 
     return(
-        <>
-            <NavBar/>   <br/><br/>
-            toListenTo Page  <br/>
+        <article>
+            <br/>
 
-           
-            <div>
-                <p>adding to: {'toListenTo'}</p>
-                {/*
-                    <button>new</button>
-                    <div><button>select</button>select bit</div>
-                */}
-            </div>
+            <p className="text-center"><strong>Adding To: </strong>{'toListenTo'}</p>
+            {/* Allow (selection||naming) of playlist to add to?*/}
 
-            {/* item type selecter? */}
-            <div id="searchbarDiv">
+            
+            {/* ?add item type selecter? */}
+            <section id="searchbarDiv" className="text-center">
                 <input type="search" id="toListenToSearchBar"/>
                 <button id="toListenToBtn" onClick={() => {
                     let searchbar = document.getElementById('toListenToSearchBar')
                     console.log(searchbar.value)
                     setSearchValue(searchbar.value)
                 }}>Search</button>
-            </div><br/><br/>
-
-            {/* search results component?*/}
-
+            </section>
             
-            <div id="search results">
-                {searchResults == null? null :
-                <ul>
+            <br/><br/>
+
+            {/* search results ?component?*/}
+            {searchResults == null? null :
+                <ul className="list-group">
                     {searchResults.items == null ? null : searchResults.items.map(t =>  
-                        <li key={t.id}>
+                        <li key={t.id} className="list-group-item">
                             <TrackCard track={t}/> 
                             {t.uri == null? null: 
-                            <form method="POST" action={'http://localhost:5000/toListenTo'}>
-                                <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
-                                <input type="submit" value="listenToLater"/>
-                            </form>
+                            <>
+                                {/* <form method="POST" action={'http://localhost:5000/toListenTo'}>
+                                        <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
+                                        <input type="submit" value="listenToLater"/>
+                                        </form> 
+                                */}
+
+                                <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
+                            </>
                             }
-                            
-                            
                         </li>
                     )}
                 </ul>
-                }   
-            </div>
-        </>
+            }
+              
+        </article>
     )
 }

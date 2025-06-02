@@ -1,56 +1,55 @@
 import { Link } from "react-router"
+import { useContext } from "react"
+import { LoggedContext } from "../main"
+
+import '../styles/navbar.css'
 
 export default function NavBar() {
+    const logged = useContext(LoggedContext)
 
     return (
-        <>
+        <nav className="text-center">
+
             <div className="btn-group">
                 <Link to='/home'>
                     <button >Home</button>
                 </Link>
                 
-                {/* Drop Down Menu? */}
-                <div id="playlist_nav_items">
-                    <button onClick={() => {
-                        let content = document.getElementById('playlist_nav_items')
-                        content.hidden=false
-                    }}>Playlists</button>
-                     
-                    <div id="playlist_nav_items"> 
-                        <Link to='/playlists/all'>
-                            <button >Playlists(all)</button>
-                        </Link><br/>
-                        <Link to='/playlists/saved'>
-                            <button >Saved Songs</button>
-                        </Link>
-                    </div>
-               
-                </div>
-                
-                
+                <div className="playlistsNav"> <button>Playlists</button>  
+                    <ul>
+                        <li> <Link to='/playlists/all'>
+                            Playlists(all)
+                            </Link> </li>
 
-                <Link to='/user/profile'>
-                    <button >User</button>
-                </Link>  
+                        <li> <Link to='/playlists/saved'>
+                            Saved Songs
+                        </Link> </li>
+                    </ul> 
+                </div>  
 
-                <Link to='/user/topTracks'>
-                    <button >topTracks</button>
-                </Link>  
-                <Link to='/user/topArtists'>
-                    <button >topArtists</button>
-                </Link>      
-                
+                <div className="userNav"> <button>User</button>
+                    <ul>
+                        <li> <Link to='/profile'>
+                            Profile 
+                        </Link> </li>
+                        <li> <Link to='/profile/topTracks'>
+                            topTracks
+                        </Link> </li>
+                        <li> <Link to='/profile/topArtists'>
+                            topArtists
+                        </Link>  </li>
+                    </ul>
+                </div>    
+
                 <Link to='/toListenTo'>
                     <button>toListenTo</button>
                 </Link>
+                
+                {logged ? <Link to='http://localhost:5000/logout'>  <button>Log Out</button>
+                        </Link> :null }
             </div>
 
-            <div>
-                <Link to='http://localhost:5000/logout'>
-                <button>Log Out</button>
-                </Link>
-            </div>
-        </>
+        </nav>
     )
 
 }

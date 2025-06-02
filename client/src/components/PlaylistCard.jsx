@@ -6,7 +6,7 @@ export default function PlaylistCard({playlist}) {
     //props atrbs: playlist{ name, owner, description, url, images, numTracks, visibility}
 
     return (
-        <div>  
+        <section>  
             <div>
                 <a href={playlist.external_urls.spotify} target="_blank"><h3>{playlist.name}</h3></a>
                 <img 
@@ -24,7 +24,7 @@ export default function PlaylistCard({playlist}) {
                 <h6>Desription:</h6>
                 <p>{playlist.description == '' ? 'N/A':playlist.description}</p>
             </div>
-        </div>
+        </section>
     )
 
 }

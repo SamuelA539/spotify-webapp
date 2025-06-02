@@ -1,96 +1,95 @@
-import { useEffect, useState } from "react"
+import { use } from "react";
+import { useEffect, useRef, useState } from "react"
 
 
-export default function PlaylistItemsCard({playlistData, playlistTracks}) {
-    //get as inputs
-    console.log(playlistData)
+export default function PlaylistItemsCard({playlistData}) {
     const[offset, setOffset] = useState(0);
+    const playlistSelections = useRef([]); //holds playlist ids on submit post
 
+    function handleToTextClick(elem){
+        console.log(elem.target)
+        let id = elem.target.id.slice(0, -7)
+        console.log('id: ', id)
 
-    const[playlistItems, setPlaylistItems] = useState(playlistTracks.items == null ? {} : playlistTracks.items.map(trackInfo => 
-        <div key={trackInfo.track.id}>
-            <input type="checkbox" id={`${trackInfo.track.id} box`}  value={
-                `${typeof trackInfo.track.name != 'undefined'? trackInfo.track.name : "track name error"} - 
-                ${typeof trackInfo.track.album.name != 'undefined'?trackInfo.track.album.name : "album name error"}`}
-                onChange={()=>{
-                    var checkbox = document.getElementById(`${trackInfo.track.id} box`)
-                    if(checkbox.checked) {
-                        console.log(`${trackInfo.track.id} cheched`)
-                        //function to save state of items
-                        checkbox.checked="checked"
-                    } else {
-                        console.log(`${trackInfo.track.id} uncheched`)
-                        checkbox.checked=""
-                    }
-                }}
-            />
+        fetch(`http://localhost:5000/playlist/toText/${id}`)
+        .then(res => res.blob().then( blob => {
+                console.log(blob)
+                let url = URL.createObjectURL(blob);    console.log(url)
+                var anch = document.createElement('a')
+                anch.href = url
+                anch.download = playlistData.name
+                anch.click()
 
-            <label>{
-                ` ${typeof trackInfo.track.name != 'undefined'? trackInfo.track.name : "track name error"} - 
-                 ${typeof trackInfo.track.album.name != 'undefined'?trackInfo.track.album.name : "album name error"}`}
-            </label><br/>
-        </div>
-        ));
+                URL.revokeObjectURL(url)
+                anch.remove()
+            })
+        ).catch(err => console.log('handleTestClick Error: ', err))
 
-    //console.log('Tracks: ' ,playlistTracks)
+    }
+
+    //list of items
+    var playlistItems =  playlistData.tracks.items.map(t => 
+        <li id={`${t.track.id}Elem`} key={t.track.id}>
+            {
+                `${typeof t.track.name != 'undefined'? t.track.name : "track name error"} - 
+                    ${typeof t.track.album.name != 'undefined'?t.track.album.name : "album name error"}`
+            }
+            {/* <button id={`${t.track.id} btn`} onClick={handleAddClick}>Add</button> */}
+        </li>
+    );
 
     //split tracks to desired window ?5?
-    if (playlistTracks.items != null) {
-        
+    if (playlistData.tracks.items != null)
         return(
-            <>
+            <section id={`${playlistData.name}-playlistItems`}>
                 {/* <h6>Playlist: {playlistData.name}</h6>
                 <h6>Num Tracks: {playlistTracks.total}</h6> */}
                 
-                <form action={`http://localhost:5000/playlist/toText/${playlistData.id}`} method="post">
+                <ul>
                     {playlistItems.slice(offset, offset+6)}
-                    <button type="submit">toText</button>
-                </form>
+                    {/* <a> 
+                        <button onClick={handleToTextClick}>toText</button>
+                    </a> */}
+                </ul>   
+                
+                <hr/>
 
-                <>
-                    <>tracks: {offset} {offset+5 <= playlistTracks.total ? `- ${offset+5}` : `- ${playlistTracks.total}`} / {playlistTracks.total}</>  <br/>
+                {/* Nav Elems (btns & text) */}
+                <section id={`${playlistData.name}-playlistItemsNavBtns`}>
+                    <p>tracks: {offset} {offset+5 <= playlistData.tracks.total ? 
+                        `- ${offset+5}` 
+                        : `- ${playlistData.tracks.total}`} / {playlistData.tracks.total}</p>
 
                     {/* Buttons need work */}
-                
-
                     {offset !== 0 ? 
                             <button onClick={() => 
-                                setOffset(o => {
-                                    //set checkedness of playlist checks
-                                    setPlaylistItems( items => {
-
-                                    })
-                                    
-                                    if (o-5 < 0) {
-                                        //document.getElementById('test').innerHTML = 'offset same'
-                                        return o
-                                    }else {
-                                        //document.getElementById('test').innerHTML = 'Added 5 to offset'
-                                        return o-5; 
-                                    }  
+                                setOffset(o => {     
+                                    if (o-5 < 0) return o;
+                                    else return o-5; 
                                 })
                             }>Prev</button>
                         : null }
 
-                    { offset+5 < playlistTracks.total ? 
+                    {offset+5 < playlistData.tracks.total ? 
                         <button onClick={() => 
                             setOffset( o => {
-                                if (o+5 > playlistData.total) {
-                                    //document.getElementById('test').innerHTML = 'offset same'
-                                    return o; 
-                                }else {
-                                    //document.getElementById('test').innerHTML = 'Added 5 to offset'
-                                    return o+5  
-                                }
+                                if (o+5 > playlistData.total) return o; 
+                                else return o+5 ;
+                                
                             })}>Next</button>                    
                         : null }
-                </>
-                <p id="test"></p>
-            </>
-        ) 
-    }
-    
+                </section> 
+                
+                <hr/> 
+                
+                <button
+                    id={`${playlistData.id}-toText`}
+                    className="btn btn-primary"
+                    onClick={handleToTextClick}>ToText</button>
 
+            </section>
+        );
+    
     return(
         <>
             Technical Difficulties

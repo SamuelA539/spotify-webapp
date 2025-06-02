@@ -22,15 +22,15 @@ export default function LoadingPage({errMsg}) {
 
     if (errFlg){
         return (
-            <>
-                <>Error</>
-                <>Please Try Logging in Again</>
-                <LoginPage/>
-            </>
+            <article className="text-center">
+                <h4>Error</h4>
+                <p>Please Try Logging in Again</p>
+                <LoginPage/> 
+            </article>
         )
     }
 
     return (
-        <>Loading...</>
+        <h3 className="text-center">Loading...</h3>
     )
 }

@@ -1,112 +1,189 @@
-import { StrictMode } from 'react'
+import { StrictMode, useContext, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 // import './index.css'
 
+//routing imports 
+import {createBrowserRouter, Outlet, RouterProvider} from "react-router"
 
-import HomePage from './pages/HomePage'
-import PlaylistsPage from './pages/PlaylistsPage'
+// ---  components  ---
 import NavBar from './components/NavBar'
-import LoginPage from './pages/LoginPage'
-import UserPage from './pages/UserPage'
-import SavedSongsPage from './pages/SavedSongsPage'
-import ToListenToPage from './pages/ToListenToPage'
 
-import {createBrowserRouter, Link, Outlet, RouterProvider} from "react-router"
+//  --- page components  ---
+
+//stand alone
+import HomePage from './pages/HomePage'
+import ToListenToPage from './pages/ToListenToPage'
+import LoginPage from './pages/LoginPage'
+import LoadingPage from './pages/LoadingPage'
+
+//playlist pages
+import PlaylistsPage from './pages/PlaylistsPage'
+import SavedSongsPage from './pages/SavedSongsPage'
+
+//user pages
+import UserPage from './pages/UserPage'
 import TopTracksPage from './pages/TopTracksPage'
 import TopArtistsPage from './pages/TopArtistsPage'
-import LogoutPage from './pages/LogoutPage'
+
+import { createContext } from "react";
+
+export const LoggedContext = createContext(false)
 
 
+function BaseLayout() {
+  const logged = useContext(LoggedContext);
+  const [logState, setLogState] = useState(logged);
 
+//backend logged check
+  useEffect(() => {
+  fetch("http://localhost:5000/user")
+    .then(res => res.json().then(data => {
+      if (data.status === 'success') {
+        console.log(data)
+        setLogState(true)
+      }
+    }))
+    .catch(err => console.error("Root Login error: ", err))
+    }, 
+  [])
 
-function Root() {
-    return (
-      <>
-        <NavBar/>
-        <div>
-          <h1>Root page</h1>
-          <Link to="/Home">Home</Link><br/>
-          <Link to="/Playlists">Playlists</Link>
-        </div>
-      </>
-    ) 
+  //logged context passed to 
+    return (<>
+        <header>
+          <nav>
+            <NavBar/> 
+          </nav>
+        </header>
+          
+          <br/> <br/>
+
+      <main>
+        <LoggedContext.Provider value={logState}>  
+              <Outlet/>
+        </LoggedContext.Provider>
+      </main>
+    </>) 
+  
+    
 }
 
+
+
 function PlaylistLayout() {
+  const logged = useContext(LoggedContext);
+  const [logState, setLogState] = useState(logged);
+
+//backend logged check
+  useEffect(() => {
+  fetch("http://localhost:5000/user")
+    .then(res => res.json().then(data => {
+      if (data.status === 'success') {
+        console.log(data)
+        setLogState(true)
+      }
+    }))
+    .catch(err => console.error("Root Login error: ", err))
+    }, 
+  [])
+
   return (
-    <> 
-      Playlist Layouts<br/>
-      <NavBar/><br/><br/>
-      <Outlet/>
-    </>
+    <article> 
+      Playlist Layout<br/><br/>
+      {logged ? <Outlet/> : <LoadingPage/>}
+    </article>
   )
 }
 
 function UserLayout() {
+  const logged = useContext(LoggedContext);
+  const [logState, setLogState] = useState(false);
+
+//backend logged check
+  useEffect(() => {
+  fetch("http://localhost:5000/user")
+    .then(res => res.json().then(data => {
+      if (data.status === 'success') {
+        console.log(data)
+        setLogState(true)
+      }
+    }))
+    .catch(err => console.error("Root Login error: ", err))
+    }, 
+  [])
+  
   return (
-    <> 
-      User Layouts<br/>
-      <NavBar/><br/><br/>
-      <Outlet/>
-    </>
+    <article> 
+      User Layout<br/><br/>
+      {logged ? <Outlet/> : 
+      <LoadingPage/>}   
+    </article>
   )
 }
 
+
+
+
 const router = createBrowserRouter([
   {
-    path:'/', 
-    Component:LoginPage
-  },
-  {
-    path:'/home', 
-    element:<HomePage/>
-  },
-  {
-    path:'/playlists', 
-    element:<PlaylistLayout/>,
+    // path:'/', 
+    Component:BaseLayout,
     children: [
-      {
-        path: '/playlists/saved', 
-        element: <SavedSongsPage/>,
+      { //login 
+        index:true, 
+        // path:'login', 
+        element:<LoginPage/>
       },
-      {
-        path: '/playlists/all',
-        element: <PlaylistsPage/>,
+
+      { //home
+        path:'home', 
+        element:<HomePage/>
       },
-    ]
-  },
-  {
-    path:'/user', 
-    element:<UserLayout/>, 
-    children: [
-      {
-        path: '/user/profile',
-        element: <UserPage/>
+
+      { //playlists
+        path:'playlists', 
+        element:<PlaylistLayout/>,
+        children: [
+          {
+            index: true,
+            path: '/playlists/saved', 
+            element: <SavedSongsPage/>,
+          },
+          {
+            path: '/playlists/all',
+            element: <PlaylistsPage/>,
+          },  
+        ]
       },
-      {
-        path: '/user/topTracks',
-        element: <TopTracksPage/>
+
+      { //user
+        path:'profile', 
+        element:<UserLayout/>, 
+        children: [
+          {
+            index:true,
+            element: <UserPage/>
+          },
+          {
+            path: '/profile/topTracks',
+            element: <TopTracksPage/>
+          },
+          {
+            path: '/profile/topArtists',
+            element: <TopArtistsPage/>
+          },
+        ]
       },
-      {
-        path: '/user/topArtists',
-        element: <TopArtistsPage/>
+
+      { //toListenTo
+        path:'toListenTo', 
+        element:<ToListenToPage/>
       },
-    ]
-  },
-  {
-    path:'/toListenTo', 
-    element:<ToListenToPage/>
-  },
-  {
-    path:'/logout', 
-    element:<LogoutPage/>
+    ],
   },
 ]);
 
-//routeing? 
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <RouterProvider router={router}/>
   </StrictMode>,
 )

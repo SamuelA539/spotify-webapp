@@ -35,42 +35,40 @@ export default function TopArtistsPage() {
     }
 
     return (
-        <>
-            <div className="text-center">
-                <h4>Top Artists</h4> <hr/>
-                <h5>Term: {term}</h5><br/>
-                <p>
-                    Term Description<br/>
-                    Short Term: 1 year of listening<br/>
-                    Medium Term: 6 months of listening<br/>
-                    Long Term: 1 month of listening<br/>
-                </p> 
-            </div>
+        <article>
+            <section className="text-center">
+                <h4>Top Artists</h4>
+                <h5>Term: {term}</h5>   <br/>
+                <details> 
+                    <summary>Term Descriptions</summary> 
+                    <p>Short Term: 1 year of listening</p>
+                    <p>Medium Term: 6 months of listening</p>
+                    <p>Long Term: 1 month of listening</p>
+                </details>  <hr/>
 
-            <div className="text-center">
-                <p>Select Time Period</p>
-                <form onChange={handleTermChange}>
-                    <input type="radio" id="shortArtist" name="topArtistsTerm" value="short" />
-                    <label htmlFor="shortArtist">Short</label>
+                <div className="text-center">
+                    <p>Select Time Period: </p>
+                    <form onChange={handleTermChange}>
+                        <input type="radio" id="shortArtist" name="topArtistsTerm" value="short" />
+                        <label htmlFor="shortArtist">Short</label>
 
-                    <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
-                    <label htmlFor="medArtist">Medium</label>
+                        <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
+                        <label htmlFor="medArtist">Medium</label>
 
-                    <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
-                    <label htmlFor="longArtist">Long</label>
-                </form> 
-            </div> <hr/>
-            
-            <div className="text-center">
-                <label htmlFor="pageSizeSelect">Select Page Size</label>
-                <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}>
-                        <option value="10">10 items per page</option>
-                        <option value="25">25 items per page</option>
-                        <option value="50">50 items per page</option>
-                </select>
-            </div><hr/>
+                        <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
+                        <label htmlFor="longArtist">Long</label>
+                    </form> 
 
-            <div className="text-center">
+                    <label htmlFor="pageSizeSelect">Select Page Size</label>
+                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}>
+                            <option value="10">10 items per page</option>
+                            <option value="25">25 items per page</option>
+                            <option value="50">50 items per page</option>
+                    </select>
+                </div>
+            </section> <hr/>
+
+            <section className="text-center">
                 <p>{offset+1} - {pageSize+ offset} of {total}</p>
                 <div className="btn-group">
                     <button onClick={() => {
@@ -91,7 +89,7 @@ export default function TopArtistsPage() {
                         document.documentElement.scrollTop = 0
                     }}className="btn btn-primary">next</button>
                 </div>
-            </div>
+            </section>
 
             <ol id="topArtistsList" start={offset+1} >           
 
@@ -101,7 +99,7 @@ export default function TopArtistsPage() {
                 }
             </ol>
 
-            <div className="text-center">
+            <section className="text-center">
                 <p>{offset+1} - {pageSize+ offset} of {total}</p>
                 <div className="btn-group">
                     <button onClick={() => {
@@ -122,7 +120,8 @@ export default function TopArtistsPage() {
                         document.documentElement.scrollTop = 0
                     }}className="btn btn-primary">next</button>
                 </div>
-            </div>
-        </>
+            </section>
+
+        </article>
     )
 }

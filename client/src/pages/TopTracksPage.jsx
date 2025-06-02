@@ -35,42 +35,42 @@ export default function TopTracksPage() {
     }
 
     return(
-        <>
-            <div className="text-center">
+        <article>
+            <section className="text-center">
                 <h4>Top Tracks</h4>
-                <h5>Term: {term}</h5><br/>
-                <p>
-                    Term Description<br/>
-                    Short Term: 1 year of listening<br/>
-                    Medium Term: 6 months of listening<br/>
-                    Long Term: 1 month of listening<br/>
-                </p> 
-            </div> <br/>
+                <h5>Term: {term}</h5>   <br/>
+                <details> 
+                    <summary>Term Descriptions</summary> 
+                    <p>Short Term: 1 year of listening</p>
+                    <p>Medium Term: 6 months of listening</p>
+                    <p>Long Term: 1 month of listening</p>
+                </details>  <hr/>
 
-            <div className="text-center">
-                Select Time Period
-                <form onChange={handleTermChange}>
-                    <input type="radio" id="shortTerm" name="topTracksTerm" value="short" />
-                    <label htmlFor="shortTerm">Short</label>
+                <div className="text-center">
+                    <p>Select Time Period: </p>
+                    <form onChange={handleTermChange}>
+                        <input type="radio" id="shortTerm" name="topTracksTerm" value="short" />
+                        <label htmlFor="shortTerm"> Short</label>
 
-                    <input type="radio" id="medTerm" name="topTracksTerm" value="medium"/>
-                    <label htmlFor="medTerm">Medium</label>
+                        <input type="radio" id="medTerm" name="topTracksTerm" value="medium"/>
+                        <label htmlFor="medTerm"> Medium</label>
 
-                    <input type="radio" id="longTerm" name="topTracksTerm" value="long"/>
-                    <label htmlFor="longTerm">Long</label>
-                </form> 
-            </div> <hr/>
-
-            <div className="text-center">
-                <label htmlFor="pageSizeSelect">Select Page Size</label>
-                <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}>
+                        <input type="radio" id="longTerm" name="topTracksTerm" value="long"/>
+                        <label htmlFor="longTerm"> Long</label>
+                    </form> <br/>
+                
+                    <label htmlFor="pageSizeSelect">Select Page Size
+                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}>
                         <option value="10">10 items per page</option>
                         <option value="25">25 items per page</option>
                         <option value="50">50 items per page</option>
-                </select>
-            </div><hr/>
+                    </select></label>
+                </div>
+            </section>  
 
-            <div className="text-center">
+            <hr/>
+
+            <section id="topNavBtns" className="text-center">
                 <p>{offset+1} - {pageSize+offset} of {total}</p>
                 <div>
                     <button onClick={() => {
@@ -91,7 +91,7 @@ export default function TopTracksPage() {
                         document.documentElement.scrollTop = 0
                     }} className="btn btn-primary">next</button>
                 </div>
-            </div>
+            </section>
 
             <ol id="topTracksList" start={offset+1}>   
                 {typeof topTracks != 'undefined' && topTracks.length > 0?
@@ -100,7 +100,7 @@ export default function TopTracksPage() {
                 }
             </ol>
 
-            <div className="text-center">
+            <section id="btmNavBtns" className="text-center">
                 <p>{offset+1} - {pageSize+offset} of {total}</p>
                 <div>
                     <button onClick={() => {
@@ -121,7 +121,7 @@ export default function TopTracksPage() {
                         document.documentElement.scrollTop = 0
                     }} className="btn btn-primary">next</button>
                 </div>
-            </div>
-        </>
+            </section>
+        </article>
     )
 }

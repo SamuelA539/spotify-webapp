@@ -1,0 +1,15 @@
+.playlistsNav ul {
+    display: none;
+}
+
+.playlistsNav:hover ul {
+    display: block;
+}
+
+.userNav ul {
+    display: none;
+}
+
+.userNav:hover ul {
+    display: block;
+}

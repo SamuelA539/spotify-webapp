@@ -1,9 +1,10 @@
 import uvicorn
-from fastapi import FastAPI
-from pydantic import BaseModel
+from typing import Annotated
+from fastapi import FastAPI, Body #Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse, FileResponse
 
-from fastapi.responses import RedirectResponse, JSONResponse
+# from pydantic import BaseModel
 #from fastapi.requests import Request #TODO check
 
 import urllib.parse, base64, os, requests
@@ -20,10 +21,6 @@ API_BASE_URL = 'https://api.spotify.com/v1/'
 scope = 'playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-top-read'
 
 frontendURL='http://localhost:3000'
-
-
-class ToListenToBody(BaseModel):
-    songURI: str
   
 
 app = FastAPI()
@@ -128,8 +125,8 @@ def makeTextFile(tracks: list, playlistName: str):
     
     usrID = querySpotify('me')['id']
     filename = playlistName.replace(' ', '_')
-    
-    f = open(f"{usrID}/{filename}.txt", 'w')
+    path = f"{usrID}/{filename}.txt"
+    f = open(path, 'w')
     f.write("Format: Song, album - artists \n\n")
     
     for track in tracks:
@@ -147,7 +144,7 @@ def makeTextFile(tracks: list, playlistName: str):
         #print(track)
     
     f.close()
-    return f
+    return f, path
 
 #TODO !!!TEST!!! should never return None
 #same datatype both outputs?
@@ -183,11 +180,12 @@ def querySpotify(endpoint):
 
 #   --- endpoints ---   
 
+
+
 #dummy landing PG?
 @app.get("/")
 def read_root():
     return "test"
-
 
 
 
@@ -448,11 +446,24 @@ def playlists(offset: int=0, limit: int=50):
     return playlistsInfo
 
 
+#whole playlist toText +?post endpoint for selceted songs?
+    #TODO better check
+@app.get('/playlist/toText/{playlistID}', response_class=FileResponse)
+def toText(playlistID: str):
+    print(f'\n---toText {playlistID} endpt---\n')
+    playlistInfo = querySpotify(f'playlists/{playlistID}')
+    print('toText playlistInfo: ', playlistInfo)
+    
+    if playlistInfo and playlistInfo['tracks']:
+        file, path = makeTextFile(playlistInfo['tracks']['items'], playlistInfo['name'])
+        return path
+    return 'wow that sucks'
+
+
 #TODO iron out offset?
 @app.get('/playlist/{playlistID}')
 def playlist(playlistID: str = ""):
-    
-    print(f'playlist{playlistID} endpt')
+    print(f'playlist {playlistID} endpt')
 
     playlistInfo = querySpotify(f'playlists/{playlistID}')
     if playlistInfo:
@@ -463,47 +474,32 @@ def playlist(playlistID: str = ""):
 
 
 
-#TODO send file
-@app.post('/playlist/toText/{playlistID}')
-def toText(playlistID):
-    playlistInfo = querySpotify(f'playlists/{playlistID}')
-
-    if playlistInfo:
-        makeTextFile(playlistInfo['tracks']['items'], playlistInfo['name'])
-        return "text file made"
-    
-    return 'coming soon'
-
-
 @app.post('/toListenTo') 
-    #recives: trackID, +playlistID?
-def addtoListenTo(data: ToListenToBody):
-    clidata = data.model_dump()
-
-    if clidata['songURI'] is not None:
-        toListenTo = ''
+    #recives: songURI ?+playlistID?
+    #pydantic: body contians json objects !!body is not object itself!!
+def addtoListenTo(songURI: Annotated[str, Body()]):
+    print('toListenTo endpt')
+    print(songURI)
+    if songURI:
+        toListenTo = '' # add to file for fast access on second time
         playlistInfo = querySpotify('me/playlists?limit=50')
-        authHeaders={'Authorization': 'Bearer '+ os.getenv('Access_Token') }
-
+        authHeaders = {'Authorization': 'Bearer '+ os.getenv('Access_Token') }
+        
     #finding toListenTo
-        while (toListenTo == '' and playlistInfo['next'] != None):
+        while (toListenTo == '' and  playlistInfo['next'] != None):
             for playlist in playlistInfo['items']:
                 if (playlist["description"] == 'toListenTo'):
                     toListenTo = playlist['id']
                     break           
-            
             #check resp code
             playlistInfo = requests.get(playlistInfo['next'], headers=authHeaders).json()
-
-        #print("to listen to after while: ", toListenTo, "== \'\'", toListenTo == '')
    
     #creating playlist
         if (toListenTo == ''): 
-            userID=querySpotify('me')['id']
-   
+            userID = querySpotify('me')['id']  
             res = requests.post(
                 url= API_BASE_URL+f'users/{userID}/playlists', 
-                json= {
+                json={
                     "name":"toListenTo",
                     "description":"toListenTo",
                     "public":False
@@ -517,15 +513,13 @@ def addtoListenTo(data: ToListenToBody):
             else:
                 return {"error":"playlist creation", "msg":res.json()}
 
-        # add song to playlist
+    # add song to playlist
         print("adding to:", toListenTo)
         if (toListenTo != ''):
 
             res = requests.post(
                 url=API_BASE_URL+f'playlists/{toListenTo}/tracks', 
-                json= {
-                    "uris": [clidata['songURI']]
-                }, 
+                json= {"uris": [songURI]}, 
                 headers=authHeaders
             )
             if (199 < res.status_code < 300):
@@ -534,6 +528,7 @@ def addtoListenTo(data: ToListenToBody):
                 return {"error": "addiing track", "msg": res.json()}
     
     return "error"
+
 
 @app.get('/search')
 def toListenTo(searchstr: str, type: str = "track", offset: int = 0):
