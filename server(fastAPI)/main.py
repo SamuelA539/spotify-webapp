@@ -3,16 +3,10 @@ from typing import Annotated
 from fastapi import FastAPI, Body #Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse
-
-# from pydantic import BaseModel
-#from fastapi.requests import Request #TODO check
+from datetime import datetime
 
 import urllib.parse, base64, os, requests
-from datetime import datetime
-from dotenv import load_dotenv
-
-
-REDIRECT_URI = 'http://127.0.0.1:5000/callback'
+#from fastapi.requests import Request #TODO check
 
 AUTH_URL = 'https://accounts.spotify.com/authorize'
 TOKEN_URL = 'https://accounts.spotify.com/api/token'
@@ -20,17 +14,17 @@ API_BASE_URL = 'https://api.spotify.com/v1/'
 
 scope = 'playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public user-library-read user-top-read'
 
-frontendURL='http://localhost:3000'
-  
+frontendURL='http://localhost:5137'
+REDIRECT_URI = 'http://127.0.0.1:5000/callback'  
 
 app = FastAPI()
 
 origins = [
-    "https://localhost:5173",
-    "http://localhost:5173",
+    "https://localhost:5137",
+    "http://localhost:5137",
 
-    "http://127.0.0.1:5173",
-    "https://127.0.0.1:5173",
+    "http://127.0.0.1:5137",
+    "https://127.0.0.1:5137",
 ]
 
 app.add_middleware(
@@ -46,14 +40,12 @@ app.add_middleware(
 
 
 #   ---   helper functions   ---
-#TODO !!!!IRON OUT LOGGING IN AND REFRESHES
 
 
-#TODO !!TEST!!
-    #true if valid
+
+#checks access token expirery in evironment variabes
+    #true if expiry time is valid
 def checkAccessToken():
-    load_dotenv()
-    
     if os.getenv('Expire_Time'):
         rawExp = os.getenv('Expire_Time')
         print('env: ', rawExp)
@@ -67,46 +59,43 @@ def checkAccessToken():
     else:
         return False
 
-#returns encoded authURL
-def getAuthUrl():
-    load_dotenv()
+#sets environ valraibles form contianer secrets 
+    #returns true on success
+def setSecrets():
+    f = open('/run/secrets/spotifyCred')
+    if f:
+        data = f.read().split('\n')
+        # print('secrets: ', data)
+        os.environ['client_id'] = data[0].split(" = ")[1]
+        os.environ['client_secret'] = data[1].split(" = ")[1]
+    #not needed? initialized on callback
+        # os.environ['Access_Token'] = data[3].split("=")[1]
+        # os.environ['Refresh_Token'] = data[4].split(" = ")[1]
+        # os.environ['Expire_Time'] = data[5].split(" = ")[1]
+        return True
+    else:
+        print('file error') 
+        return False
 
-    params = {
-        'response_type': 'code',
-        'client_id': os.getenv('client_id'),
-        'scope': scope,
-        'redirect_uri':REDIRECT_URI,
-        'show_dialog': True
-    }
-
-    auth_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-    return auth_url
-
-#dif implementation 
-    #True if Success
+#refreshes access token
+    #True on Success
 def refreshToken():
-    load_dotenv()
-    if os.getenv('Refresh_Token'):  #refresh token exits
-        if not checkAccessToken(): # token Expired
-           
-            header=     {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
+    if os.getenv('Refresh_Token'): # can be refreshed 
+        if not checkAccessToken(): # needed? double checks if accessToken valid
+            response = requests.post(
+                TOKEN_URL, 
+                data={
+                    'grant_type': 'refresh_token',
+                    'refresh_token':os.getenv('Refresh_Token'),
+                    'client_id': os.getenv("client_id"),
+                    'client_secret': os.getenv("client_secret")
+                }, 
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            )
 
-            req_body = {
-                'grant_type': 'refresh_token',
-                'refresh_token':os.getenv('Refresh_Token'),
-                'client_id': os.getenv("client_id"),
-                'client_secret': os.getenv("client_secret")
-            }
-
-            #print(f'req: {req_body}')
-
-            response = requests.post(TOKEN_URL, data=req_body, headers=header)
             newTokenInfo = response.json()
-            
-            # print('refresh response: ')
-            # print(newTokenInfo)
             
             if 'access_token' in newTokenInfo:
                 accessTokenTime = datetime.now().timestamp() + newTokenInfo['expires_in']
@@ -114,13 +103,17 @@ def refreshToken():
                 print('token refreshed, time: ', datetime.fromtimestamp(datetime.now().timestamp()))
                 print('new expiry: ', datetime.fromtimestamp(accessTokenTime))
                
-                os.putenv('Access_Token',newTokenInfo['access_token']) 
-                #os.putenv('Expire_Time', str(accessTokenTime) )  datetime.fromtimestamp(accessTokenTime)
+                os.putenv('Access_Token', newTokenInfo['access_token']) 
                 os.putenv('Expire_Time', datetime.fromtimestamp(accessTokenTime) ) 
                 return True
-    return False
+        else:
+            return True #no token refresh needed
+    
+    return False #bad resps  || no refresh error
 
-#in special dir? => scalable/user
+#creates file of playlists tracks in user specifc dir
+    #returns file and path to file
+        #++in special dir? => scalable/user
 def makeTextFile(tracks: list, playlistName: str):
     
     usrID = querySpotify('me')['id']
@@ -146,135 +139,98 @@ def makeTextFile(tracks: list, playlistName: str):
     f.close()
     return f, path
 
-#TODO !!!TEST!!! should never return None
-#same datatype both outputs?
+#querys spoitfy api 
+    #returns json formanted data with status value true on success
 def querySpotify(endpoint): 
-    load_dotenv()
     print('Querying')
     
     if (type(endpoint) is str) & checkAccessToken():
-        headers ={
-            'Authorization': 'Bearer '+ os.getenv('Access_Token', default='')
-        }
-        response = requests.get(f"{API_BASE_URL}{endpoint}", headers=headers)
+        response = requests.get(
+            f"{API_BASE_URL}{endpoint}", 
+            headers={
+                'Authorization': 'Bearer '+ os.getenv('Access_Token', default='')
+            }
+        )
         
-        #print('response sent')
-        print('resp Status: ',response.status_code)
+        print('resp Status: ', response.status_code)
 
-        if 199 < response.status_code < 300: #good resp
-            #print('good resp')
+        if 199 < response.status_code < 300: 
             info = response.json()
-            #print(type(info))
             info.update({'status':'success'})
             return info
-        else:   #bad resp
-            print("error with reqest: ", response.json())
+        else:  
             return {"status":f'query error {response.status_code}'}   
     else:
-        print('access token/ type error (probably)')
-        return {"status":f'token error?'} 
-        #print('i/p type: ' ,type(endpoint))     
-        
+        #token error ||  endpoint type error
+        return {"status":'error'}         
         
 
 
 #   --- endpoints ---   
 
 
-
 #dummy landing PG?
 @app.get("/")
 def read_root():
+    setSecrets()
     return "test"
 
 
 
 '''
-    ---    Logging Endpoint    ---
+    ---    Login Endpoints   ---
 '''
 
-#LogIn endpoint
+#Login endpoint
+    #redirects user to spotify login page
 @app.get("/login")
 def login():
     print('login endpt')
-    load_dotenv()
+    if setSecrets():
 
-    params = {
-        'response_type': 'code',
-        'client_id': os.getenv('client_id'),
-        'scope': scope,
-        'redirect_uri':REDIRECT_URI,
-        'show_dialog': True
-    }
+        params = {
+            'response_type': 'code',
+            'client_id': os.getenv('client_id'),
+            'scope': scope,
+            'redirect_uri':REDIRECT_URI,
+            'show_dialog': True
+        }
 
-    auth_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
+        return RedirectResponse(f"{AUTH_URL}?{urllib.parse.urlencode(params)}")
+    else:
+        return {'Error': 'API access'}
 
-    data = {
-        'auth_url': auth_url
-    }
-
-    print('authURL: ', auth_url)
-
-    return RedirectResponse(auth_url)
-    #return data
-
-#TODO make scalable & globalize tokenTime val(cred file instead of env?) 
-    #try to make app rerun on login or reset env var?
+#callback endpoint
+    #handles callback from spotify login returns redirect to frontend home page
 @app.get("/callback/")
 def callback(code: str | None = None): 
     print('callback endpt')
-    load_dotenv()
-
+    
     if code: #success
         idSecret = os.getenv('client_id')+":"+os.getenv('client_secret')
         bytesS = idSecret.encode("utf-8")
         auth_base64 = str(base64.b64encode(bytesS), "utf-8")
 
-        req_header = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': "Basic "+ auth_base64
-        }
-        
-        req_body = {
-            'code': code,
-            'grant_type': 'authorization_code',
-            'redirect_uri': REDIRECT_URI,         
-        } 
-
-        response = requests.post(TOKEN_URL, data=req_body, headers=req_header)
+        response = requests.post(
+            TOKEN_URL, 
+            data= {
+                'code': code,
+                'grant_type': 'authorization_code',
+                'redirect_uri': REDIRECT_URI,         
+            }, 
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': "Basic "+ auth_base64
+            }
+        )
         token_info = response.json()
         
-        #print('Callback info: ', token_info)
-        
-        #access token key alreadry in .env
-        load_dotenv()
-        
         accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
-        
-        print('time given(callback): ', float(token_info['expires_in']))
-        print('cur time(callback): ', datetime.fromtimestamp(datetime.now().timestamp())) 
-        print('env time(callback): ', datetime.fromtimestamp(accessTokenTime))
-
-
-
-        # env = open('.env', 'w')
-
-        # secert = os.getenv('client_secret')
-        # id = os.getenv('client_id')
-
-        # env.write(f'client_id = {id}\n')
-        # env.write(f'client_secret = {secert}\n')
-        # env.write(f'Access_Token={token_info['access_token']}\n')
-        # env.write(f'Refresh_Token={token_info['refresh_token']}\n')
-        # env.write(f'Expire_Time={datetime.fromtimestamp(accessTokenTime)}\n')
-
-        # env.close()
 
         ### ALT ###
         os.environ['Access_Token'] = str(token_info['access_token'])
         os.environ['Refresh_Token'] = str(token_info['refresh_token'])
         os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
-
 
         #makeUser specific dir (if not exists )
         dirs = os.scandir()
@@ -288,44 +244,36 @@ def callback(code: str | None = None):
         if (not exists):
             os.mkdir(usrID)
         
-
-        #print("Access Token Life: ", accessTokenTime)
-        #return RedirectResponse(frontendURL+'/Home') #/profile 
-
-        #return RedirectResponse('/user')
-        return RedirectResponse('http://localhost:5173/home')
+        return RedirectResponse('http://localhost:5137/home')
     else:
-        return {'Error': 'No Code reuturned in Auth'}
+        return {'Error': 'No Code returned in Auth'}
 
-#TODO probably more checks
+#refresh endpoint
+    #refreshes access token and returns refruesh status as JSON
 @app.get('/refresh')
 def refresh():
     print('refresh endpt')
-    #reset env vars s.t dosent need rerun
+    if refreshToken(): 
+        # return RedirectResponse('http://localhost:5173/home')
+        return {'status': 'success'}
+    else:
+        return {'status': 'failure'}
 
-    #if expired
-    req_body = {
+    response = requests.post(
+        TOKEN_URL, 
+        data={
             'grant_type': 'refresh_token',
             'refresh_token': os.getenv('Refresh_Token'),
             'client_id': os.getenv('client_id'),
             'client_secret': os.getenv('client_secret')
         }
+    )
 
-    response = requests.post(TOKEN_URL, data=req_body)
-    newTokenInfo = response.json()
-    if (newTokenInfo):
-        print('refresh response: ', newTokenInfo)
-
-        os.environ['Access_Token'] = newTokenInfo['access_token'] 
-        os.environ['Expire_Time'] = str(datetime.fromtimestamp(datetime.now().timestamp() + newTokenInfo['expires_in'])) #doesnt set?
-
-        print('Refreshed Expire Time: ', os.environ['Expire_Time'])
-        return RedirectResponse('http://localhost:5173/home')
-    else:
-        return {'Error': 'Refresh Error'}
-
+#logout endpoint
+    #clears env vars and redirects to front landing page
 @app.get('/logout')
 def logout():
+    print('logout endpt')
     os.environ['Access_Token'] = ''
     os.environ['Refresh_Token'] = ''
     os.environ['Expire_Time'] = ''
@@ -341,29 +289,26 @@ def logout():
 #user endpoint
     #returns userInfo json
 @app.get('/user')
-def user():  
+def user(): 
+    print('user endpt')
     userInfo = querySpotify('me')
-
-    print('\nuser endpt')
-    print('User info ', userInfo)
 
     if userInfo:
         if 'status' in userInfo:
             if userInfo['status'] == 'success':
                 userInfo.update({'logged':'true'})
-                return userInfo
-            
+
             elif userInfo['status'] == 'token error':
-                if not checkAccessToken():
-                    refreshToken()
+                if refreshToken():
                     userInfo = querySpotify('me')
-                    print('UserInfo()',userInfo)
-                    userInfo.update({'logged':'true', 'Error':'Refresh'})
-                    return userInfo
-                else:
-                    print('Other Error')
-    
-        userInfo.update({'logged': 'false','Error': 'User Query'})
+                    if userInfo['status'] == 'success':
+                        userInfo.update({'logged':'true'})
+                    else:
+                        userInfo.update({'logged': 'false','Error': 'Query Error'})
+                else: userInfo.update({'logged': 'false','Error': 'Refresh Error'})
+            
+            else:
+                userInfo.update({'logged': 'false','Error': 'Querry Error'})
         return userInfo
     else:
         print(userInfo)
@@ -373,19 +318,18 @@ def user():
 def savedSongs(offset: int=0, limit: int=50):
     print('savedSongs endpt')
     savedSongs = querySpotify(f'me/tracks?offset={offset}&limit={limit}')
-    #print('Saved Songs: ', savedSongs)
-    
-    if savedSongs:
+
+    if savedSongs and savedSongs['status'] == 'success':
         return savedSongs
     else:
         return {'Error': 'Saved Song Query Error'}
 
 @app.get('/topArtists')
-def topArtists(term: str='medium',offset: int=0, limit: int=50):
+def topArtists(term: str='medium', offset: int=0, limit: int=50):
     print('topArtist endpt')
-    topItems = querySpotify(f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
+    topArtist = querySpotify(f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
     
-    if topItems:
+    if topArtist and topArtist['status'] == 'success':
         return topItems
     else:
         return {'Error': 'Top Artists Query Error'}
@@ -393,9 +337,9 @@ def topArtists(term: str='medium',offset: int=0, limit: int=50):
 @app.get('/topTracks')
 def topTracks(term: str='medium', offset: int=0, limit: int=50):
     print('topTracks endpt')
-    topItems = querySpotify(f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
+    topTracks = querySpotify(f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
     
-    if topItems:
+    if topTracks and topTracks['status'] == 'success':
         return topItems
     else:
         return {'Error': 'Top Items Query Error'}
@@ -404,63 +348,54 @@ def topTracks(term: str='medium', offset: int=0, limit: int=50):
 '''
     ---    Playlist Endpoint    ---
 '''
+#TODO 
+    # +parseplaylist function
+    # playlist/totext test & front end implementation
+    # playlist/ offset check
 
-#TODO iron out like user
-    #get all playlist items
-    #retrun {total:'',items:'', href:'' }
 @app.get('/playlists')
 def playlists(offset: int=0, limit: int=50):
-    print('\nplaylist endpt')
+    print('playlist endpt')
     playlistsInfo = querySpotify(f'me/playlists?offset={offset}&limit={limit}')
 
-    if playlistsInfo:
-        if 'status' in playlistsInfo:
-            if playlistsInfo['status'] == 'success':
-                playlistsInfo.update({'logged':'true'})
+    if playlistsInfo and 'status' in playlistsInfo:
+        if playlistsInfo['status'] == 'success':
+            playlistsInfo.update({'logged':'true'})
                 
-                # if 'items' in playlistsInfo:
-                #     #total = playlistsInfo['total']
-                #     #playlists = playlistsInfo['items']
-                #     print('Da kitchen Is gettin HOT')
-                #     # while (len(playlists) < total) and next:
-                #     #     headers ={
-                #     #         'Authorization': 'Bearer '+ os.getenv('Access_Token')
-                #     #     }
-                #     #     resp = requests.get(next, headers=headers)
-                #     #     if 199 < resp.status_code < 300: 
-                #     #         resp =resp.json()      
-                #     #         nextPlaylists = resp['items']
-                #     #         playlists.append(nextPlaylists)
-                #     #         next = playlistsInfo['next']
-                #     #     else:
-                #     #         print('We have a problem Doc')
-                return playlistsInfo
+            # if 'items' in playlistsInfo:
+            #     #total = playlistsInfo['total']
+            #     #playlists = playlistsInfo['items']
+            #     print('Da kitchen Is gettin HOT')
+            #     # while (len(playlists) < total) and next:
+            #     #     headers ={
+            #     #         'Authorization': 'Bearer '+ os.getenv('Access_Token')
+            #     #     }
+            #     #     resp = requests.get(next, headers=headers)
+            #     #     if 199 < resp.status_code < 300: 
+            #     #         resp =resp.json()      
+            #     #         nextPlaylists = resp['items']
+            #     #         playlists.append(nextPlaylists)
+            #     #         next = playlistsInfo['next']
+            #     #     else:
+            #     #         print('We have a problem Doc')
+            return playlistsInfo
             
-            elif playlistsInfo['status'] == 'token error':
-                if refreshToken():
-                    playlistsInfo = querySpotify('me')
-                    playlistsInfo.update({'logged':'true'})
-                    return playlistsInfo
-    
-        playlistsInfo.update({'Error': 'Playlists Query Error'})
-    return playlistsInfo
+        elif playlistsInfo['status'] == 'token error':
+            if refreshToken():
+                playlistsInfo = querySpotify('me')
+                return playlistsInfo.update({'logged':'true'})
+    return playlistsInfo.update({'Error': 'Playlists Query Error'})
 
-
-#whole playlist toText +?post endpoint for selceted songs?
-    #TODO better check
 @app.get('/playlist/toText/{playlistID}', response_class=FileResponse)
 def toText(playlistID: str):
     print(f'\n---toText {playlistID} endpt---\n')
     playlistInfo = querySpotify(f'playlists/{playlistID}')
-    print('toText playlistInfo: ', playlistInfo)
     
     if playlistInfo and playlistInfo['tracks']:
         file, path = makeTextFile(playlistInfo['tracks']['items'], playlistInfo['name'])
         return path
     return 'wow that sucks'
 
-
-#TODO iron out offset?
 @app.get('/playlist/{playlistID}')
 def playlist(playlistID: str = ""):
     print(f'playlist {playlistID} endpt')
@@ -470,16 +405,15 @@ def playlist(playlistID: str = ""):
         return playlistInfo
     else:
         return {'Error': 'User Query Error'}
-#libaray/playlists/{playlist_id} endpoint
 
 
-
+#TODO test
 @app.post('/toListenTo') 
     #recives: songURI ?+playlistID?
     #pydantic: body contians json objects !!body is not object itself!!
 def addtoListenTo(songURI: Annotated[str, Body()]):
     print('toListenTo endpt')
-    print(songURI)
+    print('adding: ', songURI)
     if songURI:
         toListenTo = '' # add to file for fast access on second time
         playlistInfo = querySpotify('me/playlists?limit=50')

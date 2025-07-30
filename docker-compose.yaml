@@ -1,0 +1,35 @@
+services:
+  frontend:
+    # image: spotifycli
+    build: ./client
+    ports: 
+      - "5137:5137"
+    # links: 
+    #   - "backend:serv"
+    # networks:
+    #   - front-tier
+    #   - back-tier
+
+  backend:
+    # image: spotifyserv
+    build: ./server(fastAPI)
+    ports:
+      - "5000:5000"
+    secrets:
+      - spotifyCred
+
+    # env_file:
+    #   - path: ./server(fastAPI)/spotifyCred.env
+
+
+    # links: 
+    #   - "frontend:cli"
+    # networks:
+    #   - back-tier
+
+secrets:
+  spotifyCred:
+    file: ./server(fastAPI)/spotifyCred.env
+# networks:
+#   front-tier: {}
+#   back-tier: {}
