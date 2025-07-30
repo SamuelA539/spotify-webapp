@@ -330,7 +330,7 @@ def topArtists(term: str='medium', offset: int=0, limit: int=50):
     topArtist = querySpotify(f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
     
     if topArtist and topArtist['status'] == 'success':
-        return topItems
+        return topArtist
     else:
         return {'Error': 'Top Artists Query Error'}
 
@@ -340,7 +340,7 @@ def topTracks(term: str='medium', offset: int=0, limit: int=50):
     topTracks = querySpotify(f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
     
     if topTracks and topTracks['status'] == 'success':
-        return topItems
+        return topTracks
     else:
         return {'Error': 'Top Items Query Error'}
 
