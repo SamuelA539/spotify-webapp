@@ -1,15 +1,40 @@
-.playlistsNav ul {
+ul.mainMenu {
+    display: flex;
+    flex-direction: row;   
+    
+    list-style-type: none;
+    justify-content: center;
+    width: auto;
+}
+
+ul.mainMenu a {
+    color: black;
+    text-decoration: none;
+    padding: 2.5px;
+}
+
+ul.mainMenu a:hover {
+    color: lightslategray;
+    text-decoration:underline;
+}
+
+ul.mainMenu > li {
+    background-color:#f8d8d8;
+    border: 2.5px solid black;
+    margin: 5px;
+}
+
+ul.mainMenu > li > ul {
     display: none;
 }
 
-.playlistsNav:hover ul {
-    display: block;
+ul.mainMenu  li:hover {
+    background-color:#ef8181;
 }
 
-.userNav ul {
-    display: none;
-}
-
-.userNav:hover ul {
-    display: block;
+ul.mainMenu > li:hover > ul{
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;
+    justify-content: center;
 }

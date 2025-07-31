@@ -2,7 +2,7 @@ import { Link } from "react-router"
 import { useContext } from "react"
 import { LoggedContext } from "../main"
 
-import '../styles/navbar.css'
+import '../styles/Navbar.css'
 
 export default function NavBar() {
     const logged = useContext(LoggedContext)
@@ -10,46 +10,36 @@ export default function NavBar() {
     return (
         <nav className="text-center">
 
-            <div className="btn-group">
-                <Link to='/home'>
-                    <button >Home</button>
-                </Link>
+            <ul className="mainMenu">
+                <li>
+                    <Link to='/home'>Home</Link> 
+                </li>
                 
-                <div className="playlistsNav"> <button>Playlists</button>  
+                <li> 
+                    <Link to='/playlists/all'>Playlists</Link>
                     <ul>
-                        <li> <Link to='/playlists/all'>
-                            Playlists(all)
-                            </Link> </li>
-
-                        <li> <Link to='/playlists/saved'>
-                            Saved Songs
-                        </Link> </li>
-                    </ul> 
-                </div>  
-
-                <div className="userNav"> <button>User</button>
-                    <ul>
-                        <li> <Link to='/profile'>
-                            Profile 
-                        </Link> </li>
-                        <li> <Link to='/profile/topTracks'>
-                            topTracks
-                        </Link> </li>
-                        <li> <Link to='/profile/topArtists'>
-                            topArtists
-                        </Link>  </li>
+                        <li><Link to='playlists/saved'>Saved Songs</Link></li>
                     </ul>
-                </div>    
+                </li>
 
-                <Link to='/toListenTo'>
-                    <button>toListenTo</button>
-                </Link>
+                <li>
+                    <Link to='/profile'>Profile</Link>
+                    <ul>
+                        <li><Link to='/profile/topArtists'>Top Artists</Link></li>
+                        <li><Link to='/profile/topTracks'>Top Tracks</Link></li>
+                    </ul>
+                </li>
                 
-                {logged ? <Link to='http://localhost:5000/logout'>  <button>Log Out</button>
-                        </Link> :null }
-            </div>
+                <li>
+                    <Link to='/toListenTo'>To Listen To</Link>
+                </li>
 
+                {logged ? 
+                    <li>
+                        <Link to='http://localhost:5000/logout'>Logout</Link>
+                    </li>
+                    :null}
+            </ul>
         </nav>
     )
-
 }

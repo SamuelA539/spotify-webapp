@@ -1,0 +1,37 @@
+/* section {
+    border: 2.5px solid lightslategray;
+} */
+
+div.playlistInfo {
+    display: flex;
+    flex-direction: row;
+    gap:12.5%;
+}
+
+div.playlistInfo > * {
+    margin: 15px;
+}
+
+div.playlistInfo > div  {
+    vertical-align: 45%;
+}
+
+div.playlistInfo a{
+    color: #000;
+    text-decoration: none;
+}
+
+div.playlistInfo a:hover{
+    color: #780101;
+    text-decoration: underline;
+}
+.descriptionDiv{
+    padding: 5px;
+}
+
+.descriptionDiv > p{
+    display: none;
+}
+.descriptionDiv:hover > p{
+    display: block;
+}

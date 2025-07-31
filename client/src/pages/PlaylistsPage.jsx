@@ -2,6 +2,7 @@ import { useEffect, useState, createElement, useRef } from "react";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistItemsCard from "../components/PlaylistItemsCard";
 import LoadingPage from "./LoadingPage";
+import '../styles/PlaylistPage.css'
 
 //useTranstion on list
 //toText hidden if no value state or ref set when playlist selected
@@ -80,7 +81,7 @@ export default function PlaylistsPage() {
     //TODO: try appending child on click
     function handlePlaylistTracksClick(elem) {
         let id = elem.target.id.slice(0, -10)
-        let content = document.getElementById(`${id} content`)
+        let content = document.getElementById(`${id} tracks`)
 
         console.log('showing playlist: ',id)
         if (elem.target.innerHTML == "See Tracks"){
@@ -97,23 +98,24 @@ export default function PlaylistsPage() {
     return (
         <article>
 
-            <section id="playlistsInfo" className="text-center">
+            <section id="playlistsPageInfo" className="text-center">
                 <h2>Playlists Page</h2>
                 <h4 >Total Plalists: {totalPlaylists}</h4>
             </section>  <br/><hr/>
 
-
-            <section className="text-center" id="topNavBtns">
-                <p>{`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}</p><br/>
-                <div>     
-                    <button onClick={()=> {
-                        setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
-                        }} className="btn btn-outline-primary">Prev</button>
-                    
-                    <button onClick={()=> {
-                        setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                        }} className="btn btn-outline-primary">Next</button>
-                </div>  
+            <section id="topNavBtns" className="text-center navBtns">
+                <span>     
+                     {`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}
+                    <span>
+                        <button onClick={()=> {
+                            setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
+                            }} className="btn btn-outline-primary">Prev</button>
+                                            
+                        <button onClick={()=> {
+                            setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                            }} className="btn btn-outline-primary">Next</button>
+                    </span>
+                </span>  
             </section>  <br/><hr/>
             
             <section id="playlistsList">
@@ -126,12 +128,11 @@ export default function PlaylistsPage() {
                             <div id={`${playlist.id}-ctrlBtn`}>  
                                 <button 
                                     id={`${playlist.id}-tracksBtn`} 
-                                    onClick={(handlePlaylistTracksClick)} 
+                                    onClick={handlePlaylistTracksClick} 
                                     className="btn btn-primary">See Tracks</button>
-
                             </div>
                             
-                            <div id={`${playlist.id} content`} >
+                            <div id={`${playlist.id} tracks`} >
                                 {playlist.id == playlistInfo.id //&& document.getElementById("itemsBtn").innerHTML == 'Close' Broken 
                                 ? <PlaylistItemsCard playlistData={playlistInfo}/> : null}
                             </div>
@@ -140,19 +141,19 @@ export default function PlaylistsPage() {
                 </ul>   
             </section>  <br/><hr/>
 
-            <section className="text-center" id="btmNavBtns">
-                <p>{`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}</p><br/>
-                <div>     
-                    {/* <button onClick={()=>{
-                        playlistOffset != 0 ? setPlayliistOffset((playlistOffset)=> {playlistOffset-50}): null}}>Prev</button> */}
-                    <button onClick={()=> {
-                        setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
-                        }} className="btn btn-outline-primary">Prev</button>
-                    
-                    <button onClick={()=> {
-                        setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                        }} className="btn btn-outline-primary">Next</button>
-                </div> 
+            <section id="btmNavBtns" className="text-center navBtns">
+                <span>     
+                     {`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}
+                    <span>
+                        <button onClick={()=> {
+                            setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
+                            }} className="btn btn-outline-primary">Prev</button>
+                                            
+                        <button onClick={()=> {
+                            setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                            }} className="btn btn-outline-primary">Next</button>
+                    </span>
+                </span>  
             </section>
 
         </article>

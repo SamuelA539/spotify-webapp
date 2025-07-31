@@ -1,0 +1,8 @@
+div.trackCard{
+    display: flex;
+    flex-direction: row;
+}
+
+div.trackCard div{
+    margin: 5px;
+}
