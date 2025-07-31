@@ -1,6 +1,7 @@
+import '../styles/ArtistCard.css'
 
-export default function ArtistCard({artist, }) {
-    //console.log(artist)
+export default function ArtistCard({artist, size=150}) {
+    console.log(artist)
 
     var res = ''
     //breaks on 2 genre artist case
@@ -12,29 +13,33 @@ export default function ArtistCard({artist, }) {
     }
     const genresStr = res
     
+    //seting bestImg 
+    if (artist.images) {
+        artist.images.sort((a,b) => a.height-b.height) //check objs are real images
+        
+        var bestImg = artist.images[0];
+        for (var i of artist.images) {
+            if (size - bestImg.height > size - i.height) bestImg = i;
+        }
+    }
 
     return(
-        <> 
+        <div className='artistCard'> 
             <div>
-                <img src = { 
-                        artist.images.length == 3 ? 
-                            artist.images[2].url 
-                            :null
-                    
-                } 
-                alt={`${artist.name} profile photo`} />
+                <img src = {bestImg ? bestImg.url : null} 
+                alt={`${artist.name} profile photo`} 
+                height={size}
+                width={size}/>
             </div>
             <div>
-                <a href={artist.external_urls.spotify}>
-                    <h3>{artist.name}</h3>
-                </a>
+                <a href={artist.external_urls.spotify}><h3>{artist.name}</h3></a>
                 {/* <h6>({artist.type})</h6> */}
                 
                 <h4>Info</h4>
-                <p>Genres: {genresStr}</p>
-                <p>General Popularity: {artist.popularity}/100</p>
-                <p>Followers: {artist.followers.total}</p>
+                <h5>Genres: {genresStr}</h5>
+                <h6>General Popularity: {artist.popularity}/100</h6>
+                <h6>Followers: {artist.followers.total}</h6>
             </div>
-        </>
+        </div>
     )
 }

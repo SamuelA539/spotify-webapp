@@ -61,9 +61,10 @@ export default function UserPage() {
         .catch(err => console.log('Fetch Error: ', err))
     }, [showTopArtsits, topArtistsTerm])
 
-    function handleArtistTermChange(btn) {
-        console.log("Selected: ", btn.target.value)
-        setTopArtistsTerm(btn.target.value)
+    function handleArtistTermChange(e) {
+        console.log("Selected: ", e.target.value)
+        e.target.checked = true
+        setTopArtistsTerm(e.target.value)
     }
 
     //top Tracks effect
@@ -84,9 +85,10 @@ export default function UserPage() {
         .catch(err => console.log('Fetch Error: ', err))
     }, [showTopTracks, topTracksTerm])
 
-    function handleTrackTermChange(btn) {
-        console.log('Selected: ', btn.target.value)
-        setTopTracksTerm(btn.target.value)
+    function handleTrackTermChange(e) {
+        console.log('Selected: ', e.target.value)
+        e.target.checked = true
+        setTopTracksTerm(e.target.value)
     }
 
 
@@ -117,24 +119,25 @@ export default function UserPage() {
                     </section>
 
                     {showTopArtsits?
-                        <ol id="topArtistsList" className="list-group list-group-numbered">  
-                            <p>Select Time Period</p>
-                            <form onChange={handleArtistTermChange}>
-                                <input type="radio" id="shortArtist" name="topArtistsTerm" value="short" />
-                                <label htmlFor="shortArtist">Short</label>
+                    <div>
+                        <p>Select Time Period</p>
+                        <form onChange={handleArtistTermChange}>
+                            <input type="radio" id="shortArtist" name="topArtistsTerm" value="short"/>
+                            <label htmlFor="shortArtist">Short</label>
 
-                                <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
-                                <label htmlFor="medArtist">Medium</label>
+                            <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
+                            <label htmlFor="medArtist">Medium</label>
 
-                                <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
-                                <label htmlFor="longArtist">Long</label>
-                            </form> <hr/>
-
-                                {typeof topArtists != 'undefined' && topArtists.length > 0?
-                                    topArtists.map(art => <li key={art.id} className="list-group-item"><ArtistCard artist={art}/></li>)
-                                    :null
-                                }
+                            <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
+                            <label htmlFor="longArtist">Long</label>
+                        </form> <hr/>
+                        <ol id="topArtistsList">  
+                            {typeof topArtists != 'undefined' && topArtists.length > 0?
+                                topArtists.map(art => <li key={art.id}><ArtistCard artist={art}/></li>)
+                                :null
+                            }
                          </ol>
+                    </div>
                     :null}
 
                 </article>
@@ -157,24 +160,25 @@ export default function UserPage() {
                     </section>
 
                     {showTopTracks?
+                    <div>
+                        <p>Select Time Period</p>
+                        <form onChange={handleTrackTermChange}>
+                            <input type="radio" id="shortTerm" name="topTracksTerm" value="short" className="form-check-input"/>
+                            <label htmlFor="shortTerm" className="form-check-label">Short</label>
+
+                            <input type="radio" id="medTerm" name="topTracksTerm" value="medium" className="form-check-input"/>
+                            <label htmlFor="medTerm" className="form-check-label">Medium</label>
+
+                            <input type="radio" id="longTerm" name="topTracksTerm" value="long" className="form-check-input"/>
+                            <label htmlFor="longTerm" className="form-check-label">Long</label>
+                        </form> <hr/>
                         <ol id="topTracksList"> 
-                            <p>Select Time Period</p>
-                            <form onChange={handleTrackTermChange}>
-                                <input type="radio" id="shortTerm" name="topTracksTerm" value="short" className="form-check-input"/>
-                                <label htmlFor="shortTerm" className="form-check-label">Short</label>
-
-                                <input type="radio" id="medTerm" name="topTracksTerm" value="medium" className="form-check-input"/>
-                                <label htmlFor="medTerm" className="form-check-label">Medium</label>
-
-                                <input type="radio" id="longTerm" name="topTracksTerm" value="long" className="form-check-input"/>
-                                <label htmlFor="longTerm" className="form-check-label">Long</label>
-                            </form> <hr/>
-
                             {typeof topTracks != 'undefined' && topTracks.length > 0?
                                 topTracks.map(t => <li key={t.id}><TrackCard track={t}/></li>)
                                 :null
                             }
                         </ol>
+                    </div>
                     :null}
                 </article>
                       

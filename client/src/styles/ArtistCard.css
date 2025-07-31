@@ -1,8 +1,8 @@
-div.trackCard{
+div.artistCard {
     display: flex;
     flex-direction: row;
 }
 
-div.trackCard > div{
+div.artistCard > div {
     margin: 5px;
 }

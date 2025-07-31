@@ -1,0 +1,9 @@
+section.userpfpDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+section.userpfpDiv > div {
+    text-align: center;
+}
