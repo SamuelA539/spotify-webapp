@@ -1,11 +1,13 @@
 import { use } from "react";
 import { useEffect, useRef, useState } from "react"
+import "../styles/PlaylistItems.css"
 
 
 export default function PlaylistItemsCard({playlistData}) {
     const[offset, setOffset] = useState(0);
     const playlistSelections = useRef([]); //holds playlist ids on submit post
 
+    //make to effect
     function handleToTextClick(elem){
         console.log(elem.target)
         let id = elem.target.id.slice(0, -7)
@@ -39,61 +41,27 @@ export default function PlaylistItemsCard({playlistData}) {
     );
 
     //split tracks to desired window ?5?
-    if (playlistData.tracks.items != null)
+    if (playlistData.tracks.items)
         return(
             <section id={`${playlistData.name}-playlistItems`}>
-                {/* <h6>Playlist: {playlistData.name}</h6>
-                <h6>Num Tracks: {playlistTracks.total}</h6> */}
-                
                 <ul>
-                    {playlistItems.slice(offset, offset+6)}
-                    {/* <a> 
-                        <button onClick={handleToTextClick}>toText</button>
-                    </a> */}
+                    {playlistItems.slice(offset, offset+5)}
                 </ul>   
                 
-                <hr/>
-
-                {/* Nav Elems (btns & text) */}
-                <section id={`${playlistData.name}-playlistItemsNavBtns`}>
-                    <p>tracks: {offset} {offset+5 <= playlistData.tracks.total ? 
-                        `- ${offset+5}` 
-                        : `- ${playlistData.tracks.total}`} / {playlistData.tracks.total}</p>
-
-                    {/* Buttons need work */}
-                    {offset !== 0 ? 
-                            <button onClick={() => 
-                                setOffset(o => {     
-                                    if (o-5 < 0) return o;
-                                    else return o-5; 
-                                })
-                            }>Prev</button>
-                        : null }
-
-                    {offset+5 < playlistData.tracks.total ? 
-                        <button onClick={() => 
-                            setOffset( o => {
-                                if (o+5 > playlistData.total) return o; 
-                                else return o+5 ;
-                                
-                            })}>Next</button>                    
-                        : null }
-                </section> 
-                
-                <hr/> 
-                
+                <section className="playlistBtns">
+                <span>    
+                    <button onClick={() => setOffset(o => o-5 < 0 ? o : o-5)}>Prev</button>
+                    <button onClick={() => setOffset( o => o+5 > playlistData.total ? o : o+5)}>Next</button>
+                    {`${offset+1} - 
+                        ${offset+5 > playlistData.tracks.total ? playlistData.tracks.total: 5+offset} 
+                        of ${playlistData.tracks.total}`} 
+                </span>  
                 <button
                     id={`${playlistData.id}-toText`}
-                    className="btn btn-primary"
+                    // className="btn btn-primary"
                     onClick={handleToTextClick}>ToText</button>
-
+                </section>
             </section>
         );
-    
-    return(
-        <>
-            Technical Difficulties
-        </>
-    )
 
 }

@@ -88,7 +88,6 @@ function PlaylistLayout() {
 
   return (
     <article> 
-      Playlist Layout<br/><br/>
       {logged ? <Outlet/> : <LoadingPage/>}
     </article>
   )
@@ -113,7 +112,6 @@ function UserLayout() {
   
   return (
     <article> 
-      User Layout<br/><br/>
       {logged ? <Outlet/> : 
       <LoadingPage/>}   
     </article>

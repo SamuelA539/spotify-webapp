@@ -2,7 +2,6 @@ import { useEffect, useState, createElement, useRef } from "react";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistItemsCard from "../components/PlaylistItemsCard";
 import LoadingPage from "./LoadingPage";
-import '../styles/PlaylistPage.css'
 
 //useTranstion on list
 //toText hidden if no value state or ref set when playlist selected
@@ -97,7 +96,6 @@ export default function PlaylistsPage() {
 
     return (
         <article>
-
             <section id="playlistsPageInfo" className="text-center">
                 <h2>Playlists Page</h2>
                 <h4 >Total Plalists: {totalPlaylists}</h4>
@@ -155,7 +153,6 @@ export default function PlaylistsPage() {
                     </span>
                 </span>  
             </section>
-
         </article>
     )
 

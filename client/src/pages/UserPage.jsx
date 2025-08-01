@@ -41,7 +41,6 @@ export default function UserPage() {
             })
     }, []);
 
-
     
     //top Artist effect
     const [showTopArtsits, setShowTopArtsits] = useState(false);
@@ -115,18 +114,19 @@ export default function UserPage() {
                             }
                         }} className="btn btn-outline-primary">Show Top 20 Artists</button>
 
-                        <a href="/user/topArtists"><button className="btn btn-outline-primary">See All Top Artists</button></a>
+                        <a href="/profile/topArtists"><button className="btn btn-outline-primary">See All Top Artists</button></a>
                     </section>
 
                     {showTopArtsits?
                     <div>
-                        <p>Select Time Period</p>
-                        <form onChange={handleArtistTermChange}>
+                        <form onChange={handleArtistTermChange} id="artistTermForm">
+                            Select Time Period: &#9;
+                            
                             <input type="radio" id="shortArtist" name="topArtistsTerm" value="short"/>
-                            <label htmlFor="shortArtist">Short</label>
+                            <label htmlFor="shortArtist">Short</label> &#9;
 
                             <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
-                            <label htmlFor="medArtist">Medium</label>
+                            <label htmlFor="medArtist">Medium</label> &#9;
 
                             <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
                             <label htmlFor="longArtist">Long</label>
@@ -156,18 +156,18 @@ export default function UserPage() {
                                 document.getElementById('showTopTracksBtn').innerHTML= 'Hide Tracks'
                             }
                         }} className="btn btn-outline-primary">Show Top 20 Tracks</button>
-                        <a href="/user/topTracks"><button className="btn btn-outline-primary">See All Top Tracks</button></a>
+                        <a href="/profile/topTracks"><button className="btn btn-outline-primary">See All Top Tracks</button></a>
                     </section>
 
                     {showTopTracks?
                     <div>
-                        <p>Select Time Period</p>
-                        <form onChange={handleTrackTermChange}>
+                        <form onChange={handleTrackTermChange} id="trackTermForm">
+                            Select Time Period: &#9;
                             <input type="radio" id="shortTerm" name="topTracksTerm" value="short" className="form-check-input"/>
-                            <label htmlFor="shortTerm" className="form-check-label">Short</label>
-
+                            <label htmlFor="shortTerm" className="form-check-label">Short</label> &#9;
+ 
                             <input type="radio" id="medTerm" name="topTracksTerm" value="medium" className="form-check-input"/>
-                            <label htmlFor="medTerm" className="form-check-label">Medium</label>
+                            <label htmlFor="medTerm" className="form-check-label">Medium</label> &#9;
 
                             <input type="radio" id="longTerm" name="topTracksTerm" value="long" className="form-check-input"/>
                             <label htmlFor="longTerm" className="form-check-label">Long</label>

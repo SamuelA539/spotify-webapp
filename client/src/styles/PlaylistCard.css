@@ -5,16 +5,19 @@
 div.playlistInfo {
     display: flex;
     flex-direction: row;
-    gap:12.5%;
+    text-align: center;
+    /* gap:12.5%; */
 }
 
 div.playlistInfo > * {
     margin: 15px;
+    /* justify-content: center;
+    text-align: center; */
 }
 
-div.playlistInfo > div  {
-    vertical-align: 45%;
-}
+
+
+
 
 div.playlistInfo a{
     color: #000;
@@ -25,6 +28,9 @@ div.playlistInfo a:hover{
     color: #780101;
     text-decoration: underline;
 }
+
+
+
 .descriptionDiv{
     padding: 5px;
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import ArtistCard from "../components/ArtistCard"
+import NavBtns from "../components/NavBtns"
 
 //displays all top artists selection for time range
 export default function TopArtistsPage() {
@@ -25,12 +26,12 @@ export default function TopArtistsPage() {
     }, [term, pageSize, offset])
     
     function handleTermChange(btn) {
-        console.log("Selected: ", btn.target.value)
+        // console.log("Selected: ", btn.target.value)
         setTerm(btn.target.value)
     }
 
     function handlePgSzChange(slctr) {
-        console.log("Selected: ", slctr.target.value)
+        // console.log("Selected: ", slctr.target.value)
         setPageSize(Number(slctr.target.value))
     }
 
@@ -38,29 +39,30 @@ export default function TopArtistsPage() {
         <article>
             <section className="text-center">
                 <h4>Top Artists</h4>
-                <h5>Term: {term}</h5>   <br/>
-                <details> 
-                    <summary>Term Descriptions</summary> 
-                    <p>Short Term: 1 year of listening</p>
-                    <p>Medium Term: 6 months of listening</p>
-                    <p>Long Term: 1 month of listening</p>
-                </details>  <hr/>
+                <h5>{term} term</h5>    <hr/>
 
-                <div className="text-center">
-                    <p>Select Time Period: </p>
-                    <form onChange={handleTermChange}>
+                <div id="topArtistInfo" className="text-center">
+                    <details> 
+                        <summary>Term Descriptions</summary> 
+                        <p>Short Term: 1 year of listening</p>
+                        <p>Medium Term: 6 months of listening</p>
+                        <p>Long Term: 1 month of listening</p>
+                    </details>
+
+                    <form onChange={handleTermChange} value={term}>
+                        Select Time Period: &#9;
                         <input type="radio" id="shortArtist" name="topArtistsTerm" value="short" />
-                        <label htmlFor="shortArtist">Short</label>
+                        <label htmlFor="shortArtist">Short</label> &#9;
 
                         <input type="radio" id="medArtist" name="topArtistsTerm" value="medium"/>
-                        <label htmlFor="medArtist">Medium</label>
+                        <label htmlFor="medArtist">Medium</label> &#9;
 
                         <input type="radio" id="longArtist" name="topArtistsTerm" value="long"/>
                         <label htmlFor="longArtist">Long</label>
                     </form> 
 
-                    <label htmlFor="pageSizeSelect">Select Page Size</label>
-                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}>
+                    <label htmlFor="pageSizeSelect">Select Page Size</label> &#9;
+                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange} value={pageSize}>
                             <option value="10">10 items per page</option>
                             <option value="25">25 items per page</option>
                             <option value="50">50 items per page</option>
@@ -68,60 +70,38 @@ export default function TopArtistsPage() {
                 </div>
             </section> <hr/>
 
-            <section className="text-center">
-                <p>{offset+1} - {pageSize+ offset} of {total}</p>
-                <div className="btn-group">
-                    <button onClick={() => {
-                        setOffset(o => {
-                            if(o-pageSize <= 0) {
-                                return o
-                            }else return o-pageSize;
-                        })
-                        document.documentElement.scrollTop = 0
-                    }} className="btn btn-primary">prev</button>
-                    
-                    <button onClick={() => {
-                        setOffset(o => {
-                            if(o+pageSize >= total) {
-                                return o
-                            }else return 0+pageSize;
-                        })
-                        document.documentElement.scrollTop = 0
-                    }}className="btn btn-primary">next</button>
-                </div>
-            </section>
+            <NavBtns 
+                pageSize={pageSize} 
+                offset={offset} 
+                total={total} 
+                fwrdFn={() => {
+                    setOffset(o => o < total ? Number(o+pageSize) : Number(o))
+                }} 
+                bckwrdFn={() => {
+                    setOffset(o => o == 0 ? 0 : o-pageSize)
+                }}
+            />
 
-            <ol id="topArtistsList" start={offset+1} >           
-
+            <ol id="topArtistsList" start={offset+1}>
                 {typeof topArtists != 'undefined' && topArtists.length > 0?
                     topArtists.map(art => <li key={art.id} ><ArtistCard artist={art}/></li>)
                     :null
                 }
             </ol>
-
-            <section className="text-center">
-                <p>{offset+1} - {pageSize+ offset} of {total}</p>
-                <div className="btn-group">
-                    <button onClick={() => {
-                        setOffset(o => {
-                            if(o-pageSize <= 0) {
-                                return o
-                            }else return o-pageSize;
-                        })
-                        document.documentElement.scrollTop = 0
-                    }} className="btn btn-primary">prev</button>
-                    
-                    <button onClick={() => {
-                        setOffset(o => {
-                            if(o+pageSize >= total) {
-                                return o
-                            }else return 0+pageSize;
-                        })
-                        document.documentElement.scrollTop = 0
-                    }}className="btn btn-primary">next</button>
-                </div>
-            </section>
-
+            
+            <NavBtns 
+                pageSize={pageSize} 
+                offset={offset} 
+                total={total} 
+                fwrdFn={() => {
+                    setOffset(o => o < total ? Number(o+pageSize) : Number(o))
+                    document.documentElement.scrollTop = 30
+                }} 
+                bckwrdFn={() => {
+                    setOffset(o => o == 0 ? 0 : o-pageSize)
+                    document.documentElement.scrollTop = 30
+                }}
+            />
         </article>
     )
 }

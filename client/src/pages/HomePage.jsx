@@ -46,10 +46,11 @@ export default function HomePage() {
 
     return (
         <article> 
-            <section>
-                <h2 id='HomeTitle' className="text-center">Welcome To Sam's Spotify Page</h2> <br/>
+            <section className="text-center">
+                <h2 id='HomeTitle'>Welcome To Sam's Spotify Page</h2> <br/>
                 <UserProfileCard userInfo={userInfo} userPfps={userPfp}/>   
             </section>
+            
             <br/>
 
             <section id="appDescrip" className="text-center">

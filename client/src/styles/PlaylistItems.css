@@ -1,0 +1,16 @@
+section.playlistBtns {
+    display: flex;
+    flex-direction: row;
+}
+
+section.playlistBtns > * {
+    margin: 5px;
+}
+
+section.playlistBtns > span> * {
+    margin: 5px;
+}
+ul {
+    list-style: inside circle;
+    padding: 5px;
+}
