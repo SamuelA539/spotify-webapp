@@ -18,8 +18,10 @@ export default function SavedSongsPage() {
         .then( res => res.json()
             .then( data => {
                 console.log(data)
-                setSongs(data.items)
-                setTotal(data.total)
+                if (data.status == "success") {
+                    setSongs(data.items)
+                    setTotal(data.total)
+                } else throw Error('Bad Data Error');
             })
             .catch(err => {
                 setErrFlg(true)
@@ -42,14 +44,16 @@ export default function SavedSongsPage() {
         fetch(`http://localhost:5000/savedSongs/toText/`)
         .then(res => res.blob().then( blob => {
                 console.log(blob)
-                let url = URL.createObjectURL(blob);    console.log(url)
-                var anch = document.createElement('a')
-                anch.href = url
-                anch.download = 'savedSongs'
-                anch.click()
+                if (blob){
+                    let url = URL.createObjectURL(blob);    console.log(url)
+                    var anch = document.createElement('a')
+                    anch.href = url
+                    anch.download = 'savedSongs'
+                    anch.click()
 
-                URL.revokeObjectURL(url)
-                anch.remove()
+                    URL.revokeObjectURL(url)
+                    anch.remove()
+                }
             })
         ).catch(err => console.log('handleTestClick Error: ', err))
     }

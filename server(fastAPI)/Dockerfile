@@ -1,4 +1,4 @@
-FROM python:3.12.11-alpine
+FROM python:alpine
 WORKDIR /usr/local/server
 
 #test first
@@ -9,9 +9,10 @@ RUN pip install --no-cache -r requirements.txt
 
 
 
-COPY main.py ./
+COPY app .
 
 #add usr ?
 
 EXPOSE 5000
+
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

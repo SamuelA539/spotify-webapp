@@ -8,37 +8,36 @@ export default function UserPage() {
     const [userPfp, setUserPfp] = useState({});
     
     //get userPFp data
-    useEffect( ()=> {
-            fetch('http://localhost:5000/user')
-            .then(res => {
-                res.json()
-                .then(data => {
-                    console.log('data: ', data)
-                    if (typeof data.Error !== 'undefined') {
-                        console.log('error deteced')
-                        throw new Error('User call error: ', data.Error)
-                    } else {
-                        setUserInfo({ //make if case
-                            displayName:data.display_name,
-                            id: data.id,
-                            email: data.email,
-                            href:data.external_urls.spotify,
-                            followerCount: data.followers.total,
-                            url: data.external_urls.spotify,
-                        }) 
-                        // console.log('no error')
-                        setUserPfp(data.images)
-                    }               
-                })
-                .catch( err => {
-                    setErrFlg(true)
-                    console.warn('JSON conversion Error: ', err)
-                })
+    useEffect( () => {
+        fetch('http://localhost:5000/user')
+        .then(res => {
+            res.json()
+            .then(data => {
+                console.log('data: ', data)
+                if (data.status == 'success') {
+                    setUserInfo({ //make if case
+                        displayName:data.display_name,
+                        id: data.id,
+                        email: data.email,
+                        href:data.external_urls.spotify,
+                        followerCount: data.followers.total,
+                        url: data.external_urls.spotify,
+                    }) 
+                    setUserPfp(data.images)
+                } else {
+                    console.log('error deteced')
+                    throw new Error('User call error: ', data.Error)
+                }               
             })
-            .catch(err => {
+            .catch( err => {
                 setErrFlg(true)
-                console.warn('Fetch Error: ', err)
+                console.warn('JSON conversion Error: ', err)
             })
+        })
+        .catch(err => {
+            setErrFlg(true)
+            console.warn('Fetch Error: ', err)
+        })
     }, []);
 
     
@@ -52,8 +51,8 @@ export default function UserPage() {
         .then(res => 
             res.json()
             .then(data => {
-                    // console.log('Top Artist data: ', data)
-                    setTopArtists(data.items)
+                if (data.status == 'success') setTopArtists(data.items);
+                else throw Error('Bad Server Data')
             })
             .catch(err => console.log('Data Error: ', err))
         )
@@ -76,8 +75,8 @@ export default function UserPage() {
         .then(res => 
             res.json()
             .then(data => {
-                    // console.log('Top Track data: ', data)
-                    setTopTracks(data.items)
+                if (data.status) setTopTracks(data.items);
+                else throw Error('Bad Serer Data');
             })
             .catch(err => console.log('Data Error: ', err))
         )

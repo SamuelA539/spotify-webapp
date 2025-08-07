@@ -6,7 +6,8 @@ from fastapi.responses import RedirectResponse, FileResponse
 from pydantic import BaseModel, AfterValidator
 from datetime import datetime
 
-import urllib.parse, base64, os, requests
+from app import exceptions
+import base64, os, requests 
 #from fastapi.requests import Request #TODO check
 
 AUTH_URL = 'https://accounts.spotify.com/authorize'
@@ -30,7 +31,7 @@ origins = [
     "https://127.0.0.1:5137",
 ]
 
-#TODO configure properly
+#TODO configure 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -50,27 +51,23 @@ class userCredCookies(BaseModel):
 #checks access token expirery in evironment variabes
     #TODO make Cookie based
     #true if expiry time is valid
+#errs 
+#   app init
 def checkAccessToken():
     if os.getenv('Expire_Time'):
         rawExp = os.getenv('Expire_Time')
-        print('env: ', rawExp)
         accessTokenTime = datetime.fromisoformat(rawExp)
-        
-        print('Exp(check): ',accessTokenTime)
-        print('Now(check): ', datetime.fromtimestamp(datetime.now().timestamp()))
-        print("valid: " , accessTokenTime >= datetime.now() )
-        # return True
         return accessTokenTime >= datetime.now()
-    else:
-        return False
+    raise exceptions.AppInitError(message="Expire Time not Found", name="AccessToken Expriry")
 
 #sets environ valraibles form contianer secrets 
     #returns true on success
+#errs 
+#   app init - file DNE
 def setSecrets():
     f = open('/run/secrets/spotifyCred')
     if f:
         data = f.read().split('\n')
-        # print('secrets: ', data)
         os.environ['client_id'] = data[0].split(" = ")[1]
         os.environ['client_secret'] = data[1].split(" = ")[1]
     #not needed? initialized on callback
@@ -79,12 +76,13 @@ def setSecrets():
         # os.environ['Expire_Time'] = data[5].split(" = ")[1]
         return True
     else:
-        print('file error') 
-        return False
+        raise exceptions.AppInitError(message="File Not Found",)
 
 #refreshes access token
     #TODO make Cookie based
     #True on Success
+#errs 
+#   app init
 def refreshToken():
     if os.getenv('Refresh_Token'): # can be refreshed 
         if not checkAccessToken(): # needed? double checks if accessToken valid
@@ -100,54 +98,26 @@ def refreshToken():
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             )
-
-            newTokenInfo = response.json()
-            
-            if 'access_token' in newTokenInfo:
+            if 199 < response < 400:
+                newTokenInfo = response.json() 
+                if 'access_token' not in newTokenInfo:
+                    raise exceptions.ResponseError()
+                
                 accessTokenTime = datetime.now().timestamp() + newTokenInfo['expires_in']
-               
-                print('token refreshed, time: ', datetime.fromtimestamp(datetime.now().timestamp()))
-                print('new expiry: ', datetime.fromtimestamp(accessTokenTime))
-               
                 os.putenv('Access_Token', newTokenInfo['access_token']) 
                 os.putenv('Expire_Time', datetime.fromtimestamp(accessTokenTime) ) 
                 return True
-        else:
-            return True #no token refresh needed
+            else:
+                raise exceptions.ResponseError(message='Error with refresh request', name='Refresh Error')
+        return True #no token refresh needed
     
     return False #bad resps  || no refresh error
 
-#creates file of playlists tracks in user specifc dir
-    #returns file and path to file
-        #++in special dir? => scalable/user
-def makeTextFile(tracks: list, playlistName: str):
-    
-    usrID = querySpotify('me')['id']
-    filename = playlistName.replace(' ', '_')
-    path = f"{usrID}/{filename}.txt"
-    f = open(path, 'w')
-    f.write("Format: Song, album - artists \n\n")
-    
-    for track in tracks:
-        name = track['track']['name']
-        album = track['track']['album']['name']
-        
-        #TODO get all artist + features
-        artists = track['track']['artists']
-        artistNames = ''
-        for artist in artists:
-            if artist['type'] == 'artist':
-                artistNames = artist['name'] + ', '
-        
-        f.write(f'{name}, {album} - {artistNames}\n')
-        #print(track)
-    
-    f.close()
-    return f, path
-
 #querys spoitfy api 
     #TODO make Cookie based
-    #returns json formanted data with status value true on success
+#errs 
+#   bad response
+#   auth prob
 def querySpotify(endpoint): 
     print('Querying')
     if (type(endpoint) is str) & checkAccessToken():
@@ -158,16 +128,13 @@ def querySpotify(endpoint):
             }
         )
         
-        print('resp Status: ', response.status_code)
-
         if 199 < response.status_code < 300: 
             info = response.json()
             info.update({'status':'success'})
             return info
         else:  
-            return {"status":f'query error {response.status_code}'}   
-    else:
-        #token error ||  endpoint type error
+            return {"status":'error'}   
+    else:   #token error ||  endpoint type error
         return {"status":'error'}         
         
 
@@ -182,21 +149,20 @@ def read_root():
 
 #---    Spotify Account Endpoints   ---
     #TODO utilise cookies
+
+#errs
+#   init app cred
 @app.get("/login", summary="Logs into spotify")
 def login():
     print('login endpt')
     if setSecrets():
-        params = {
-            'response_type': 'code',
-            'client_id': os.getenv('client_id'),
-            'scope': scope,
-            'redirect_uri':REDIRECT_URI,
-            'show_dialog': True
-        }
-        return RedirectResponse(f"{AUTH_URL}?{urllib.parse.urlencode(params)}")
-    
+        return RedirectResponse(f"{AUTH_URL}?response_type=code&client_id={os.getenv('client_id')}&scope={scope}&redirect_uri={REDIRECT_URI}&show_dialog=True")
     return 'error'
 
+#errs 
+#   bad resp - no auth code
+#   bad reso - auth token info
+#   bad query/app init err - no usr dir
 @app.get("/callback/", summary="Callback endpoint for spotify Login")
 def callback(code: str | None = None):
     print('callback endpt')
@@ -208,7 +174,7 @@ def callback(code: str | None = None):
     bytesS = idSecret.encode("utf-8")
     auth_base64 = str(base64.b64encode(bytesS), "utf-8")
 
-    response = requests.post(
+    resp = requests.post(
         TOKEN_URL, 
         data= {
             'code': code,
@@ -220,35 +186,40 @@ def callback(code: str | None = None):
             'Authorization': "Basic "+ auth_base64
         }
     )
-    token_info = response.json()
-    accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
+    if 199 < resp.status_code < 300:
+        token_info = resp.json()
+        accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
 
-    ### ALT ###
-    os.environ['Access_Token'] = str(token_info['access_token'])
-    os.environ['Refresh_Token'] = str(token_info['refresh_token'])
-    os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
-    
-    response = RedirectResponse('http://localhost:5137/')
+        ### ALT ###
+        os.environ['Access_Token'] = str(token_info['access_token'])
+        os.environ['Refresh_Token'] = str(token_info['refresh_token'])
+        os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
+        
+        response = RedirectResponse('http://localhost:5137/')
 #TODO integrate Cookies
-    # maxAge = 60*60*24*7
-    # response.set_cookie(key='access_token', value=str(token_info['access_token']), max_age=maxAge)
-    # response.set_cookie(key='refresh_token', value=str(token_info['refresh_token']), max_age=maxAge)
-    # response.set_cookie(key="expire_time", value=str(datetime.fromtimestamp(accessTokenTime)), max_age=maxAge)
+        # maxAge = 60*60*24*7
+        # response.set_cookie(key='access_token', value=str(token_info['access_token']), max_age=maxAge)
+        # response.set_cookie(key='refresh_token', value=str(token_info['refresh_token']), max_age=maxAge)
+        # response.set_cookie(key="expire_time", value=str(datetime.fromtimestamp(accessTokenTime)), max_age=maxAge)
 
-    #makeUser specific dir (if not exists )
-    dirs = os.scandir()
-    exists = False
-    usrID = querySpotify('me')['id']
+        #makeUser specific dir (if not exists )
+        exists = False
+        usrQuery = querySpotify('me')
+        if usrQuery['status'] == 'success':
+            usrID = usrQuery['id']
 
-    for dir in dirs:
-        if (dir.name == usrID):
-            exists = True
+            for dir in os.scandir():
+                if (dir.name == usrID):
+                    exists = True
 
-    if (not exists):
-        os.mkdir(usrID)
-    
-    return response
+            if (not exists):
+                os.mkdir(usrID)
+        
+            return response
+        #no usr dir - no toText
+    return 'error'
 
+#TODO errs in helper functions
 @app.get('/refresh', summary="Refreshes user's spotify access token")
 def refresh():
     print('refresh endpt')
@@ -275,6 +246,8 @@ def termValidator(term:str):
     terms = {'short', 'medium', 'long'}
     return (term in terms)
 
+#errs 
+#   query failure
 @app.get('/user', summary="Returns user's profile info")
 def user(userCred: Annotated[userCredCookies, Cookie()]): 
     print('user endpt')
@@ -288,6 +261,8 @@ def user(userCred: Annotated[userCredCookies, Cookie()]):
         print(userInfo)
         return 'error'
 
+#errs 
+#   query failure
 @app.get('/savedSongs', summary="Returns user's saved songs")
 def savedSongs(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('savedSongs endpt')
@@ -299,12 +274,15 @@ def savedSongs(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Qu
         return 'error'
 
 #TODO can send progress to client?
+#errs 
+#   query failure
+#   bad resp
 @app.get('/savedSongs/toText', response_class=FileResponse, summary="Returns text file of users saved songs")
 def savedSongsToText():
     print('\nsaved songs toText')
 
 #creating file of saved songs
-    userInfo = querySpotify('me')['id']
+    userInfo = querySpotify('me')
     if userInfo['status'] == 'success':
         filename = 'savedSongs'
         path = f"{userInfo['id']}/{filename}.txt"
@@ -341,7 +319,7 @@ def savedSongsToText():
                     print(f"saved song progress {size}/{resp['total']}" )
 
                 nextTracks = resp['next']
-                print('next url: ', nextTracks)
+                # print('next url: ', nextTracks)
             else:
                 #error
                 print('error loading tracks ', resp.status_code)
@@ -352,6 +330,8 @@ def savedSongsToText():
         return path
     return 'error'
 
+#errs 
+#   query failure
 @app.get('/topArtists', summary="Returns users's top artists")
 def topArtists(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('topArtist endpt')
@@ -363,6 +343,8 @@ def topArtists(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limi
     
     return 'Error'
 
+#errs 
+#   query failure
 @app.get('/topTracks', summary="Returns users's top tracks")
 def topTracks(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('topTracks endpt')
@@ -377,7 +359,8 @@ def topTracks(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit
 
 #---    Playlist Endpoint    ---
     #TODO: http Errors [exceptions on failed queries]
-
+#errs 
+#   query failure
 @app.get('/playlists', summary="Returns user's playlists")
 def playlists(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('playlist endpt')
@@ -394,12 +377,35 @@ def playlists(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Que
 def toText(playlistID: str):
     print(f'\n---toText {playlistID} endpt---\n')
     playlistInfo = querySpotify(f'playlists/{playlistID}')
-    
-    if playlistInfo['status'] == 'success' and playlistInfo['tracks']:
-        file, path = makeTextFile(playlistInfo['tracks']['items'], playlistInfo['name'])
+    userInfo = querySpotify('me')
+        
+    if playlistInfo['status'] == 'success' and userInfo['status'] == 'success' and playlistInfo['tracks']:
+        path = f"{userInfo['id']}/{playlistInfo['name']}.txt"
+        f = open(path, 'w')
+        f.write("Format: Song, album - artists \n\n")
+        for track in playlistInfo['tracks']:
+            name = track['track']['name']
+            album = track['track']['album']['name']
+            
+            #TODO get all artist + features
+            artists = track['track']['artists']
+            artistNames = ''
+            for artist in artists:
+                if artist['type'] == 'artist':
+                    artistNames = artist['name'] + ', '
+            
+            f.write(f'{name}, {album} - {artistNames}\n')
+            size += 1
+
+            print(f'{name}, {album} - {artistNames}')
+            print(f"saved song progress {size}/{playlistInfo['total']}" )
+        f.close()        
         return path
+    
     return 'error'
 
+#errs 
+#   query failure
 @app.get('/playlist/{playlistID}', summary="Returns information on user playlist")
 def playlist(playlistID: str):
     print(f'playlist {playlistID} endpt')
@@ -410,7 +416,9 @@ def playlist(playlistID: str):
     
     return 'Error'
 
-
+#errs 
+#   query failure
+#   bad resp
 @app.post('/toListenTo', summary="Adds track to toListenTo playlist") 
 def addtoListenTo(songURI: Annotated[str, Body()]):
     print('toListenTo post endpt')
@@ -465,6 +473,9 @@ def addtoListenTo(songURI: Annotated[str, Body()]):
 
     return "error"
 
+#errs 
+#   query failure
+#   bad resp
 @app.get('/toListenTo', summary='Returns Information for toListenTo playlist')
 def getToListenTo():
     print('toListenTo get endpt')
@@ -512,10 +523,13 @@ def getToListenTo():
     return "error"
 
 
+
 def itemTypeValidator(type):
     types = {'track'}
     return type in types
 
+#errs 
+#   query failure
 @app.get('/search', summary="Returns search results of search string")
 def toListenTo(searchstr: str, itemType: str = "track", offset: Annotated[int, Query(ge=0)] = 0):
     print('search url params: ',offset, itemType)

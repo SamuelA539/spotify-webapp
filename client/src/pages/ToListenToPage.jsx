@@ -12,23 +12,21 @@ export default function ToListenToPage() {
     const [toListenTo, setToListenTo] = useState({})
     var showPlaylist = false
 
-    //Get toListenTo
+//Get toListenTo
     useEffect(() => {
         fetch(`http://localhost:5000/toListenTo`)
             .then( data => {
                     data.json()
                     .then(data => {
-                        // console.log(data)
-                        if (data.id) {
-                            // setToListenToID(data.id)
+                        if (data.status == 'success') {
                             fetch(`http://localhost:5000/playlist/${data.id}`)
                             .then(res => res.json().then(data =>{
                                 console.log(data)
                                 if (data.tracks) setToListenTo(data.tracks);
-                                else console.warn('data error')
+                                else throw Error('Bad Server Data')
                             }))
                             .catch(err => console.warn(err))
-                        }
+                        } else throw Error('Bad Server Data')
                     })
                 }
             )
@@ -37,7 +35,7 @@ export default function ToListenToPage() {
             })
     },[])
     
-    //getting search reuslts
+//getting search reuslts
     useEffect(() => {
         if (searchValue != '') {
             fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`)
@@ -45,10 +43,10 @@ export default function ToListenToPage() {
                     data.json()
                     .then(data => {
                         console.log(data)
-                        setSearchResults(data.tracks)
+                        if (data.status == 'success') setSearchResults(data.tracks);
+                        else throw Error("Bad Server Error")
                     })
-                }
-            )
+                })
             .catch(err => {
                 console.error('Search Error: ', err)
             })
@@ -59,8 +57,8 @@ export default function ToListenToPage() {
         var uri = t.target.value
         var body = JSON.stringify({songURI: t.target.value})
 
-        console.log('target: ',uri)
-        console.log('body: ', body)
+        // console.log('target: ',uri)
+        // console.log('body: ', body)
         //422 unprocessable Entity TODO read fastapi docs
         fetch('http://localhost:5000/toListenTo', 
             {
@@ -70,10 +68,11 @@ export default function ToListenToPage() {
         .then(res => {res.json()
             .then(data => {
                 console.log(data)
-                if (data == 'success') {
+                if (data.status == 'success') {
                     alert("Song Addded Successfuly")
                 } else {
                     alert("Error Adding song")
+                    throw Error('Bad Server Data')
                 }
             })})
         .catch(err => console.log(`toListenTo ${t.target.id} error: `, err))

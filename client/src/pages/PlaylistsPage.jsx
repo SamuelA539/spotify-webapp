@@ -19,54 +19,43 @@ export default function PlaylistsPage() {
     // const toTextLinkRef = useRef('')//useRef(getToTextURL(playlistInfo))
     const [textLink, setTextLink] = useState('')
 
-    //gets playlists
+//gets playlists
     useEffect( ()=> {
-            fetch(`http://localhost:5000/playlists?offset=${playlistOffset}`)
-            .then(res => {
-                res.json()
-                .then(data => {
-                    console.log('data', data)
+        fetch(`http://localhost:5000/playlists?offset=${playlistOffset}`)
+        .then(res => {
+            res.json()
+            .then(data => {
+                console.log('data', data)
 
-                    if (typeof data.items !== "undefined") { //only good case
-                        setTotalPlaylists(data.total)
-                        setPlaylists(data.items)
-                    }else if (typeof data.detail !== "undefined" && data.detail.length > 0) { //api framwork err?
-                        setErrFlg(true)
-                        console.log(data.detail[0].msg)
-                        //throw new Error(`data error: ${typeof data.detail[0].msg !== 'undefined' ? data.detail[0].msg : 'Unkown'}`);
-                        //throw new Error('NOnononono')
-                    }else { //other errs
-                        setErrFlg(true)
-                        //throw new Error('Gotta Problem Doc')
-                    }
-                })
-                .catch( err => {
-                    console.warn('Data Error:\n', err)
+                if (data.status == "success") { //only good case
+                    setTotalPlaylists(data.total)
+                    setPlaylists(data.items)
+                }else { //other errs
                     setErrFlg(true)
-                });
-            })  
-            .catch(err => {
-                console.warn('Fetch Error:\n', err)
-                setErrFlg(true)
+                    throw Error('Bad Data Error')    
+                }
             })
-        },[playlistOffset]);
+            .catch( err => {
+                console.warn('Data Error:\n', err)
+                setErrFlg(true)
+            });
+        })  
+        .catch(err => {
+            console.warn('Fetch Error:\n', err)
+            setErrFlg(true)
+        })
+    },[playlistOffset]);
 
-    //gets playlistInfo
+//gets playlistInfo
     useEffect( () => {
         if (playlistID != "") { 
             fetch(`http://localhost:5000/playlist/${playlistID}`)
             .then(res => {
                 res.json()
                 .then(data => {
-                    if (typeof data.detail !== "undefined" && data.detail.length > 0){
-                        console.log(data.detail[0].msg)
-                        throw new Error(`data error: ${typeof data.detail[0].msg !== 'undefined' ? data.detail[0].msg : 'Unkown'}`);
-                        //throw new Error('NOnononono')
-                    } else if (data !== null) { //alt not empty check
+                    if (data.status== "success") { 
                         console.log('playlist ',data)
                         setPlaylistInfo(data)
-                        // setTextLink(getToTextURL(data.id))
-                        //set blob url
                     } else {
                         throw new Error('Gotta Problem Doc')
                     }
@@ -76,8 +65,7 @@ export default function PlaylistsPage() {
     }, [playlistID])
 
 
-    //shows&hides playlists tracks
-    //TODO: try appending child on click
+//shows&hides playlists tracks
     function handlePlaylistTracksClick(elem) {
         let id = elem.target.id.slice(0, -10)
         let content = document.getElementById(`${id} tracks`)
@@ -87,8 +75,8 @@ export default function PlaylistsPage() {
             setPlaylistID(id)    
             content.hidden = false
             elem.target.innerHTML = "Close Tracks"
-        } else {    //close Playlist info 
-            content.hidden = true //remove
+        } else {  
+            content.hidden = true
             elem.target.innerHTML = "See Tracks"  
         }
     }

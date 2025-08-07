@@ -17,8 +17,10 @@ export default function TopArtistsPage() {
             res.json()
             .then(data => {
                     console.log('Top Artist data: ', data)
-                    setTopArtists(data.items)
-                    setTotal(data.total)
+                    if (data.status == "success") {
+                        setTopArtists(data.items)
+                        setTotal(data.total)
+                    } else throw Error('Bad Server Data')
             })
             .catch(err => console.log('Data Error: ', err))
         )
@@ -26,12 +28,10 @@ export default function TopArtistsPage() {
     }, [term, pageSize, offset])
     
     function handleTermChange(btn) {
-        // console.log("Selected: ", btn.target.value)
         setTerm(btn.target.value)
     }
 
     function handlePgSzChange(slctr) {
-        // console.log("Selected: ", slctr.target.value)
         setPageSize(Number(slctr.target.value))
     }
 

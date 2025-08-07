@@ -3,7 +3,7 @@ import UserProfileCard from "../components/UserProfileCard";
 
 import { useContext } from "react";
 
-
+//Error Handling
 export default function HomePage() {
     const [userInfo, setUserInfo] = useState({});
     const[userPfp, setUserPfp] = useState({});
@@ -15,10 +15,7 @@ export default function HomePage() {
             res.json()
             .then(data => {
                 console.log('data: ', data)
-                if (typeof data.Error !== 'undefined') {
-                    console.log('error deteced')
-                    // throw new Error('User call error: ', data.Error)
-                } else {
+                if (data.status == 'success') {
                     setUserInfo({ //make if case
                         displayName:data.display_name ,
                         id: data.id,
@@ -26,8 +23,7 @@ export default function HomePage() {
                         url: data.external_urls.spotify,
                     }) 
                     setUserPfp(data.images)
-                    setLogged(true)
-                }               
+                } else throw Error('Bad Data Error');           
             })
             .catch( err => {
                 console.warn('JSON conversion Error: ', err)
@@ -36,7 +32,6 @@ export default function HomePage() {
         })
         .catch(err => { 
             console.warn('Fetch Error: ', err)
-            setLogged(false)
         })
      },[]);
 
@@ -44,7 +39,7 @@ export default function HomePage() {
         <article> 
             <section className="text-center">
                 <h2 id='HomeTitle'>Welcome To Sam's Spotify Page</h2> <br/>
-                <UserProfileCard userInfo={userInfo} userPfps={userPfp}/>   
+                {userInfo && userPfp ?<UserProfileCard userInfo={userInfo} userPfps={userPfp}/> : "error"}
             </section>
             
             <br/>

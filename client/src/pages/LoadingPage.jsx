@@ -15,7 +15,7 @@ export default function LoadingPage({errMsg}) {
             })
         )
         .catch(err => {
-            //console.warn(err)
+            console.warn(err)
             setErrFlg(true)
         })
     },[])
