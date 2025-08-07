@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react"
-import LoadingPage from "./LoadingPage";
 import UserProfileCard from "../components/UserProfileCard";
 
 import { useContext } from "react";
 
 
 export default function HomePage() {
-    const [userInfo, setUserInfo] = useState({}); //doesnt need to keep track (not as state?)
+    const [userInfo, setUserInfo] = useState({});
     const[userPfp, setUserPfp] = useState({});
 
-    const [logged, setLogged] = useState(false); //== !errflag
 
-    //dependet on Log?
     useEffect( ()=> {
         fetch('http://localhost:5000/user')
         .then(res => {
@@ -25,8 +22,7 @@ export default function HomePage() {
                     setUserInfo({ //make if case
                         displayName:data.display_name ,
                         id: data.id,
-                        // uri: data.uri, //cool info?
-                        //followers: data.followers.total
+                        followers: data.followers.total,
                         url: data.external_urls.spotify,
                     }) 
                     setUserPfp(data.images)

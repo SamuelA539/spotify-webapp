@@ -173,8 +173,6 @@ def querySpotify(endpoint):
 
 
 #   --- endpoints ---   
-
-
 #test page
 @app.get("/")
 def read_root():
@@ -184,7 +182,6 @@ def read_root():
 
 #---    Spotify Account Endpoints   ---
     #TODO utilise cookies
-
 @app.get("/login", summary="Logs into spotify")
 def login():
     print('login endpt')
@@ -272,16 +269,12 @@ def logout():
 
 
 #---    User Info Endpoints   ---
-   #TODO: 
-   #    use more objects 
-   #    http Errors [exceptions on failed queries]
+   #TODO: http Errors [exceptions on failed queries]
 
 def termValidator(term:str):
     terms = {'short', 'medium', 'long'}
     return (term in terms)
 
-#TODO shorten checks
-#TODO check query
 @app.get('/user', summary="Returns user's profile info")
 def user(userCred: Annotated[userCredCookies, Cookie()]): 
     print('user endpt')
@@ -383,9 +376,7 @@ def topTracks(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit
 
 
 #---    Playlist Endpoint    ---
-    #TODO:
-    #    use more objects 
-    #    http Errors [exceptions on failed queries]
+    #TODO: http Errors [exceptions on failed queries]
 
 @app.get('/playlists', summary="Returns user's playlists")
 def playlists(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
