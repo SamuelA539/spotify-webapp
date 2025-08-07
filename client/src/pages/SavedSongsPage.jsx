@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react"
 import TrackCard from "../components/TrackCard"
+import NavBtns from '../components/NavBtns'
+
 import LoadingPage from "./LoadingPage"
+
 
 //displays saved songs
 export default function SavedSongsPage() {
@@ -30,6 +33,27 @@ export default function SavedSongsPage() {
 
     }, [offset])
 
+    function handleToTextClick(elem){
+        alert("please be patient playlists over 1000 have long load times")
+        console.log(elem.target)
+        // let id = elem.target.id.slice(0, -7)
+        console.log('id: ', id)
+
+        fetch(`http://localhost:5000/savedSongs/toText/`)
+        .then(res => res.blob().then( blob => {
+                console.log(blob)
+                let url = URL.createObjectURL(blob);    console.log(url)
+                var anch = document.createElement('a')
+                anch.href = url
+                anch.download = 'savedSongs'
+                anch.click()
+
+                URL.revokeObjectURL(url)
+                anch.remove()
+            })
+        ).catch(err => console.log('handleTestClick Error: ', err))
+    }
+
 
     if (errFlg) {
         return (
@@ -47,34 +71,25 @@ export default function SavedSongsPage() {
             
             <section className="text-center">
                 <h2>Saved Songs</h2>
-                <h3>Total Saved Songs: {total}</h3> 
+                <button onClick={handleToTextClick}>ToText</button>
+                {/* <h3>Total Saved Songs: {total}</h3>  */}
             </section> 
             
             <br/><hr/>
-
-            <section id="topNavBtns" className="text-center">
-                <p>{offset} - {offset + 50} of {total}</p>
-
-                <button id="prevBtn" onClick={()=> {
-                    setOffset(o => {
-                        if (o-50 < 0) return o;
-                        else {
-                            return o-50;
-                        }
-                    })
-                    document.documentElement.scrollTop = 0
-                }} className="btn btn-secondary">  Prev   </button>
-                
-                <button id="nextBtn" onClick={() => {
-                    setOffset(o => {
-                        if (o + 50 > total) return 0;
-                        else {
-                            return o + 50;
-                        }
-                    })
-                    document.documentElement.scrollTop = 0
-                }} className="btn btn-secondary">  Next  </button>
-            </section> 
+            
+            <NavBtns
+                pageSize = {50}
+                offset = {offset}
+                total = {total}
+                fwrdFn = {()=> {
+                    setOffset(o => o+50 > total ? o : o+50)
+                    // document.documentElement.scrollTop = 0
+                }}
+                bckwrdFn = {()=> {
+                    setOffset(o => o-50 < 0 ? o : o-50)
+                    // document.documentElement.scrollTop = 0
+                }}
+            />
             
             <hr/>
 
@@ -92,31 +107,21 @@ export default function SavedSongsPage() {
                 }
             </ul>
 
-            <section id="btmNavBtns" className="text-center">
-                <p>{offset} - {offset + 50} of {total}</p>
-
-                <button id="prevBtn" onClick={()=> {
-                    setOffset(o => {
-                        if (o-50 < 0) return o;
-                        else {
-                            return o-50;
-                        }
-                    })
+            <NavBtns
+                pageSize = {50}
+                offset = {offset}
+                total = {total}
+                fwrdFn = {()=> {
+                    setOffset(o => o+50 > total ? o : o+50)
                     document.documentElement.scrollTop = 0
-                }} className="btn btn-secondary">  Prev   </button>
-                
-                <button id="nextBtn" onClick={() => {
-                    setOffset(o => {
-                        if (o + 50 > total) return 0;
-                        else {
-                            return o + 50;
-                        }
-                    })
+                }}
+                bckwrdFn = {()=> {
+                    setOffset(o => o-50 < 0 ? o : o-50)
                     document.documentElement.scrollTop = 0
-                }} className="btn btn-secondary">  Next  </button>
-            </section>  
+                }}
+            />
 
         </article>
     )
 
-}
+}8

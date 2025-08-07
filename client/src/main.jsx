@@ -33,38 +33,32 @@ export const LoggedContext = createContext(false)
 function BaseLayout() {
   const logged = useContext(LoggedContext);
   const [logState, setLogState] = useState(logged);
+  
+  console.log('logged: ', logged)
+  console.log('log state: ', logState)
 
-//backend logged check
+  //backend logged check
   useEffect(() => {
   fetch("http://localhost:5000/user")
     .then(res => res.json().then(data => {
-      if (data.status === 'success') {
-        console.log(data)
-        setLogState(true)
-      }
+      setLogState(data.status == 'success')
     }))
     .catch(err => console.error("Root Login error: ", err))
     }, 
   [])
 
-  //logged context passed to 
-    return (<>
+  return (
+    <>
+    <LoggedContext.Provider value={logState}>  
         <header>
-          <nav>
             <NavBar/> 
-          </nav>
-        </header>
-          
-          <br/> <br/>
-
-      <main>
-        <LoggedContext.Provider value={logState}>  
-              <Outlet/>
-        </LoggedContext.Provider>
-      </main>
-    </>) 
-  
-    
+        </header> <br/>
+        <main>
+          {logState ? <Outlet/>: <LoginPage/>}
+        </main>
+      </LoggedContext.Provider>
+    </>
+  ) 
 }
 
 
@@ -75,7 +69,7 @@ function PlaylistLayout() {
 
 //backend logged check
   useEffect(() => {
-  fetch("http://localhost:5000/user")
+  fetch("http://localhost:5000/playlists")
     .then(res => res.json().then(data => {
       if (data.status === 'success') {
         console.log(data)
@@ -112,8 +106,7 @@ function UserLayout() {
   
   return (
     <article> 
-      {logged ? <Outlet/> : 
-      <LoadingPage/>}   
+      {logged ? <Outlet/> : <LoadingPage/>}   
     </article>
   )
 }
@@ -126,20 +119,18 @@ const router = createBrowserRouter([
     // path:'/', 
     Component:BaseLayout,
     children: [
-      { //login 
+      {
         index:true, 
         // path:'login', 
-        element:<LoginPage/>
+        element:<HomePage/>    //<LoginPage/>
       },
-
-      { //home
-        path:'home', 
-        element:<HomePage/>
-      },
-
+      // { //home
+      //   path:'home', 
+      //   element:<HomePage/>
+      // },
       { //playlists
         path:'playlists', 
-        element:<PlaylistLayout/>,
+        // element:<PlaylistLayout/>,
         children: [
           {
             index: true,
@@ -152,10 +143,9 @@ const router = createBrowserRouter([
           },  
         ]
       },
-
       { //user
         path:'profile', 
-        element:<UserLayout/>, 
+        // element:<UserLayout/>, 
         children: [
           {
             index:true,
@@ -171,7 +161,6 @@ const router = createBrowserRouter([
           },
         ]
       },
-
       { //toListenTo
         path:'toListenTo', 
         element:<ToListenToPage/>

@@ -1,15 +1,46 @@
 import { useEffect, useState } from "react"
-import LoadingPage from "./LoadingPage"
+
 import TrackCard from "../components/TrackCard"
+import NavBtns from "../components/NavBtns"
+
 export default function ToListenToPage() {
 
     const [searchValue, setSearchValue] = useState('')
     const [searchResults, setSearchResults] = useState({})
+    const [offset, setOffset] = useState(0)
+    
+    const [toListenTo, setToListenTo] = useState({})
+    var showPlaylist = false
 
+    //Get toListenTo
+    useEffect(() => {
+        fetch(`http://localhost:5000/toListenTo`)
+            .then( data => {
+                    data.json()
+                    .then(data => {
+                        // console.log(data)
+                        if (data.id) {
+                            // setToListenToID(data.id)
+                            fetch(`http://localhost:5000/playlist/${data.id}`)
+                            .then(res => res.json().then(data =>{
+                                console.log(data)
+                                if (data.tracks) setToListenTo(data.tracks);
+                                else console.warn('data error')
+                            }))
+                            .catch(err => console.warn(err))
+                        }
+                    })
+                }
+            )
+            .catch(err => {
+                console.error('Search Error: ', err)
+            })
+    },[])
+    
     //getting search reuslts
     useEffect(() => {
         if (searchValue != '') {
-            fetch(`http://localhost:5000/search?searchstr=${searchValue}`)
+            fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`)
             .then( data => {
                     data.json()
                     .then(data => {
@@ -21,23 +52,8 @@ export default function ToListenToPage() {
             .catch(err => {
                 console.error('Search Error: ', err)
             })
-        }
-    }, [searchValue])
-
-    const [playlist, setPlaylists] = useState({})
-
-    //get playlists for user to add to (later feature)
-    // useEffect(() => {
-    //     fetch('http://localhost:5000/playlists')
-    //     .then(res => {
-    //         res.json()
-    //         .then(data => 
-    //             console.log('Playlists: ',data)
-    //         )
-    //     })
-    //     .catch(err => console.error("Playlist fetch error: ", err))
-
-    // }, [])
+        } 
+    }, [searchValue, offset])
 
     function handleToListenToClick(t) {
         var uri = t.target.value
@@ -63,15 +79,24 @@ export default function ToListenToPage() {
         .catch(err => console.log(`toListenTo ${t.target.id} error: `, err))
     }
 
+    // function handleShowPlaylist(e) {
+    //     if (!showPlaylist) {
+    //         e.target.innerHTML = "Hide Items"
+    //     }else {
+    //         e.target.innerHTML = "Show Items"
+    //     }
+    // }
+
+    //next btn + back Btn
     return(
         <article>
             <br/>
 
             <p className="text-center"><strong>Adding To: </strong>{'toListenTo'}</p>
-            {/* Allow (selection||naming) of playlist to add to?*/}
+            {/* <button>Show Playlist</button>
+            <div id="playlistItems" >
+            </div> */}
 
-            
-            {/* ?add item type selecter? */}
             <section id="searchbarDiv" className="text-center">
                 <input type="search" id="toListenToSearchBar"/>
                 <button id="toListenToBtn" onClick={() => {
@@ -84,27 +109,41 @@ export default function ToListenToPage() {
             <br/><br/>
 
             {/* search results ?component?*/}
-            {searchResults == null? null :
+            {searchResults == {} ? null :
+            <>
                 <ul className="list-group">
-                    {searchResults.items == null ? null : searchResults.items.map(t =>  
-                        <li key={t.id} className="list-group-item">
-                            <TrackCard track={t}/> 
-                            {t.uri == null? null: 
-                            <>
-                                {/* <form method="POST" action={'http://localhost:5000/toListenTo'}>
-                                        <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
-                                        <input type="submit" value="listenToLater"/>
-                                        </form> 
-                                */}
+                    {!searchResults.items ? null
+                        :searchResults.items.map(t =>  
+                            <li key={t.id} className="list-group-item">
+                                <TrackCard track={t}/> 
+                                {t.uri == null? null: 
+                                <>
+                                    {/* <form method="POST" action={'http://localhost:5000/toListenTo'}>
+                                            <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
+                                            <input type="submit" value="listenToLater"/>
+                                            </form> 
+                                    */}
 
-                                <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
-                            </>
-                            }
-                        </li>
+                                    <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
+                                </>
+                                }
+                            </li>
                     )}
                 </ul>
-            }
-              
+
+                <NavBtns
+                    pageSize = {50}
+                    offset = {offset}
+                    fwrdFn = {() => {
+                        //no total what is end?
+                        setOffset(o => o + 50)
+                    }}
+                    bckwrdFn = {() => {
+                        setOffset(o => o-50 < 0 ? 0 : o-50)
+                    }}
+                />
+            </>
+            } 
         </article>
     )
 }

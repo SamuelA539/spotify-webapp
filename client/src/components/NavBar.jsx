@@ -6,13 +6,14 @@ import '../styles/Navbar.css'
 
 export default function NavBar() {
     const logged = useContext(LoggedContext)
+    console.log('nav log: ',logged)
 
     return (
         <nav className="text-center">
 
             <ul className="mainMenu">
                 <li>
-                    <Link to='/home'>Home</Link> 
+                    <Link to='/'>Home</Link> 
                 </li>
                 
                 <li> 
@@ -40,6 +41,7 @@ export default function NavBar() {
                     </li>
                     :null}
             </ul>
+
         </nav>
     )
 }
