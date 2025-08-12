@@ -7,34 +7,37 @@ import { useContext } from "react";
 export default function HomePage() {
     const [userInfo, setUserInfo] = useState({});
     const[userPfp, setUserPfp] = useState({});
+    const[errFlg, setErrFlg] = useState(false);
 
+    useEffect(() =>{
+        async function fetchData() {
+            console.log('effect starting ')
+            var resp = await fetch('http://localhost:5000/user', 
+                {
+                    credentials: 'include'
+                }
+            )
+            var data = await resp.json()
+            console.log('home page data: ', data)
+            if (data.status == 'success') return data;
+            return
+        }
 
-    useEffect( ()=> {
-        fetch('http://localhost:5000/user')
-        .then(res => {
-            res.json()
-            .then(data => {
-                console.log('data: ', data)
-                if (data.status == 'success') {
-                    setUserInfo({ //make if case
-                        displayName:data.display_name ,
-                        id: data.id,
-                        followers: data.followers.total,
-                        url: data.external_urls.spotify,
-                    }) 
-                    setUserPfp(data.images)
-                } else throw Error('Bad Data Error');           
-            })
-            .catch( err => {
-                console.warn('JSON conversion Error: ', err)
-                setLogged(false)
-            })
+        fetchData().then(userData => {
+            console.log(userData)
+            if (userData.id) {
+                setUserInfo({
+                    displayName: userData.display_name,
+                    id: userData.id,
+                    followers: userData.followers.total,
+                    url: userData.external_urls.spotify,
+                }) 
+                setUserPfp(userData.images)
+            } else setErrFlg(true);
         })
-        .catch(err => { 
-            console.warn('Fetch Error: ', err)
-        })
-     },[]);
+    },[]);
 
+    if (errFlg) throw Error('User Page - user data error');
     return (
         <article> 
             <section className="text-center">

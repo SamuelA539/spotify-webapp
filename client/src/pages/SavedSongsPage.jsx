@@ -14,10 +14,13 @@ export default function SavedSongsPage() {
     const [errFlg, setErrFlg] = useState(false)
 
     useEffect(()=> {
-        fetch(`http://localhost:5000/savedSongs?offset=${offset}`)
+        fetch(`http://localhost:5000/savedSongs?offset=${offset}`, 
+            {
+                credentials: 'include'
+            })
         .then( res => res.json()
             .then( data => {
-                console.log(data)
+                console.log('Saved songs page: ', data)
                 if (data.status == "success") {
                     setSongs(data.items)
                     setTotal(data.total)
@@ -32,7 +35,6 @@ export default function SavedSongsPage() {
             setErrFlg(true)
             console.error('Fetch Error: ', err)
         })
-
     }, [offset])
 
     function handleToTextClick(elem){
@@ -41,7 +43,10 @@ export default function SavedSongsPage() {
         // let id = elem.target.id.slice(0, -7)
         console.log('id: ', id)
 
-        fetch(`http://localhost:5000/savedSongs/toText/`)
+        fetch(`http://localhost:5000/savedSongs/toText/`, 
+            {
+                credentials: 'include'
+            })
         .then(res => res.blob().then( blob => {
                 console.log(blob)
                 if (blob){
@@ -55,21 +60,10 @@ export default function SavedSongsPage() {
                     anch.remove()
                 }
             })
-        ).catch(err => console.log('handleTestClick Error: ', err))
+        ).catch(err => console.log('handleTestClick Error: ', err), setErrFlg(true))
     }
 
-
-    if (errFlg) {
-        return (
-             <>
-                <div>
-                    Saved Songs page test
-                </div> <br/><br/>
-                <LoadingPage/>
-            </>
-        )
-    }
-
+    if (errFlg) throw Error('Saved Songs page Error')
     return (
         <article>  
             
@@ -128,4 +122,4 @@ export default function SavedSongsPage() {
         </article>
     )
 
-}8
+}

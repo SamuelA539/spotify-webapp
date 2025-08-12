@@ -3,7 +3,7 @@ import '../styles/TrackCard.css'
 
 
 export default function TrackCard({track, size=150}) {
-    console.log(track)
+    // console.log(track)
 
     //seting artists var
     var res = ''

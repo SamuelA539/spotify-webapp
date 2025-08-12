@@ -13,7 +13,7 @@ export default function NavBar() {
 
             <ul className="mainMenu">
                 <li>
-                    <Link to='/'>Home</Link> 
+                    <Link to='/home'>Home</Link> 
                 </li>
                 
                 <li> 
@@ -37,7 +37,25 @@ export default function NavBar() {
 
                 {logged ? 
                     <li>
-                        <Link to='http://localhost:5000/logout'>Logout</Link>
+                        {/* <Link to='http://localhost:5000/logout'>Logout</Link> */}
+                        <p onClick={() => {
+                            fetch('http://localhost:5000/logout',
+                                {
+                                    credentials: 'include'
+                                })
+                            .then(resp => {
+                                resp.json()
+                                .then(data => {
+                                    console.log('logout data: ', data)
+                                    if (data == 'success'){
+                                        console.log('logged out');
+                                        fetch('http://localhost:5137/')
+                                    }//, window.location.reload();
+                                    else throw Error('logout error')
+                                })
+                            })
+                            .catch(err=>{console.warn('logout error')})
+                        }}>Logout</p>
                     </li>
                     :null}
             </ul>

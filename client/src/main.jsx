@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client'
 // import './index.css'
 
 //routing imports 
-import {createBrowserRouter, Outlet, RouterProvider} from "react-router"
+import {createBrowserRouter, Outlet, RouterProvider, useLoaderData} from "react-router"
 
 // ---  components  ---
 import NavBar from './components/NavBar'
+import { PageErrorBoundry } from './components/PageErrorBoundry'
 
 //  --- page components  ---
 
@@ -25,43 +26,50 @@ import UserPage from './pages/UserPage'
 import TopTracksPage from './pages/TopTracksPage'
 import TopArtistsPage from './pages/TopArtistsPage'
 
-import { createContext } from "react";
 
+import { createContext } from "react";
 export const LoggedContext = createContext(false)
 
 
+
+async function clientLoader() {
+  var resp = await fetch(
+    "http://localhost:5000/user", 
+    {
+        credentials: 'include'
+    }
+  )
+  var data = await resp.json()
+  // console.log('loader data: ', data.logged)
+  return data.logged ? data.logged == 'true' : false 
+}
+
 function BaseLayout() {
   const logged = useContext(LoggedContext);
-  const [logState, setLogState] = useState(logged);
-  
-  console.log('logged: ', logged)
-  console.log('log state: ', logState)
-
-  //backend logged check
-  useEffect(() => {
-  fetch("http://localhost:5000/user")
-    .then(res => res.json().then(data => {
-      setLogState(data.status == 'success')
-    }))
-    .catch(err => console.error("Root Login error: ", err))
-    }, 
-  [])
+  const loaderData = useLoaderData()
+  // console.log('Base component loader data: ', loaderData)
 
   return (
-    <>
-    <LoggedContext.Provider value={logState}>  
+    <LoggedContext.Provider value={loaderData}>  
         <header>
             <NavBar/> 
         </header> <br/>
         <main>
-          {logState ? <Outlet/>: <LoginPage/>}
+          <PageErrorBoundry>
+            {/* <Outlet/> */}
+            {loaderData ? <Outlet/> : <LoginPage/>}
+          </PageErrorBoundry>
         </main>
-      </LoggedContext.Provider>
-    </>
+    </LoggedContext.Provider>
   ) 
 }
 
-
+//TODO configure
+export function FallbackElement(){
+  return(
+    <>Loading</>
+  )
+}
 
 function PlaylistLayout() {
   const logged = useContext(LoggedContext);
@@ -113,61 +121,64 @@ function UserLayout() {
 
 
 
-
-const router = createBrowserRouter([
-  {
-    // path:'/', 
-    Component:BaseLayout,
-    children: [
-      {
-        index:true, 
-        // path:'login', 
-        element:<HomePage/>    //<LoginPage/>
-      },
-      // { //home
-      //   path:'home', 
-      //   element:<HomePage/>
-      // },
-      { //playlists
-        path:'playlists', 
-        // element:<PlaylistLayout/>,
-        children: [
-          {
-            index: true,
-            path: '/playlists/saved', 
-            element: <SavedSongsPage/>,
-          },
-          {
-            path: '/playlists/all',
-            element: <PlaylistsPage/>,
-          },  
-        ]
-      },
-      { //user
-        path:'profile', 
-        // element:<UserLayout/>, 
-        children: [
-          {
-            index:true,
-            element: <UserPage/>
-          },
-          {
-            path: '/profile/topTracks',
-            element: <TopTracksPage/>
-          },
-          {
-            path: '/profile/topArtists',
-            element: <TopArtistsPage/>
-          },
-        ]
-      },
-      { //toListenTo
-        path:'toListenTo', 
-        element:<ToListenToPage/>
-      },
-    ],
-  },
-]);
+const router = createBrowserRouter(
+  [
+    {
+      // path:'/', 
+      Component:BaseLayout,
+      loader: clientLoader,
+      children: [
+        {
+          index:true, 
+          // path:'login', 
+          element:<LoginPage/>   //<HomePage/> 
+        },
+        { //home
+          path:'home', 
+          element:<HomePage/>,
+          // HydrateFallback: FallbackElement
+        },
+        { //playlists
+          path:'playlists', 
+          // element:<PlaylistLayout/>,
+          children: [
+            {
+              index: true,
+              path: '/playlists/saved', 
+              element: <SavedSongsPage/>,
+            },
+            {
+              path: '/playlists/all',
+              element: <PlaylistsPage/>,
+            },  
+          ]
+        },
+        { //user
+          path:'profile', 
+          // element:<UserLayout/>, 
+          children: [
+            {
+              index:true,
+              element: <UserPage/>
+            },
+            {
+              path: '/profile/topTracks',
+              element: <TopTracksPage/>
+            },
+            {
+              path: '/profile/topArtists',
+              element: <TopArtistsPage/>
+            },
+          ]
+        },
+        { //toListenTo
+          path:'toListenTo', 
+          element:<ToListenToPage/>
+        },
+      ],
+    },
+  ]
+);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

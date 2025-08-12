@@ -10,9 +10,14 @@ export default function TopTracksPage() {
     const [offset, setOffset] = useState(0)
     const [total, setTotal] =  useState(0)
 
+    const [errFlg, setErrFlg] = useState(false)
+
     useEffect(() => {
             //offset + limit < total
-            fetch(`http://localhost:5000/topTracks?term=${term}&limit=${pageSize}&offset=${offset}`)
+            fetch(`http://localhost:5000/topTracks?term=${term}&limit=${pageSize}&offset=${offset}`, 
+            {
+                credentials: 'include'
+            })
             .then(res => 
                 res.json()
                 .then(data => {
@@ -20,21 +25,22 @@ export default function TopTracksPage() {
                         if (data.status == 'success') {
                             setTopTracks(data.items)
                             setTotal(data.total)
-                        } else throw Error('Bad Server Error');
+                        } else throw Error('Bad data error');
                 })
-                .catch(err => console.log('Data Error: ', err))
+                .catch(err => {
+                    setErrFlg(true)
+                    throw Error('Data Error: ', err)
+                })
             )
-            .catch(err => console.log('Fetch Error: ', err))
+            .catch(err => {
+                setErrFlg(true)
+                throw Error('Fetch Error: ', err)
+            })
         }, [term, pageSize, offset])
 
-    function handleTermChange(btn) {
-        setTerm(btn.target.value)
-    }
 
-    function handlePgSzChange(slctr) {
-        setPageSize(Number(slctr.target.value))
-    }
 
+    if (errFlg) throw Error('Top Tracks Page Error');
     return(
         <article>
             <section className="text-center">
@@ -49,7 +55,7 @@ export default function TopTracksPage() {
                         <p>Long Term: 1 month of listening</p>
                     </details>
 
-                    <form onChange={handleTermChange}>
+                    <form onChange={btn => setTerm(btn.target.value)}>
                         Select Time Period: &#9;
                         <input type="radio" id="shortTerm" name="topTracksTerm" value="short" />
                         <label htmlFor="shortTerm"> Short</label> &#9;
@@ -62,7 +68,7 @@ export default function TopTracksPage() {
                     </form>
                 
                     <label htmlFor="pageSizeSelect">Select Page Size &#9;
-                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={handlePgSzChange}  value={pageSize}>
+                    <select name="pageSizeSelect" id="pageSizeSelect" onChange={slctr => setPageSize(Number(slctr.target.value))}  value={pageSize}>
                         <option value="10">10 items per page</option>
                         <option value="25">25 items per page</option>
                         <option value="50">50 items per page</option>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import TrackCard from "../components/TrackCard"
 import NavBtns from "../components/NavBtns"
+import PlaylistItemsCard from "../components/PlaylistItemsCard"
 
 export default function ToListenToPage() {
 
@@ -9,46 +10,55 @@ export default function ToListenToPage() {
     const [searchResults, setSearchResults] = useState({})
     const [offset, setOffset] = useState(0)
     
-    const [toListenTo, setToListenTo] = useState({})
-    var showPlaylist = false
+    const [toListenTo, setToListenTo] = useState('')
+    const [showingPlaylist, setShowingPlaylist] = useState(false)
+    const [errFlg, setErrFlg] = useState(false)
 
-//Get toListenTo
+    
+
+//Get toListenTo ID
     useEffect(() => {
-        fetch(`http://localhost:5000/toListenTo`)
-            .then( data => {
-                    data.json()
-                    .then(data => {
-                        if (data.status == 'success') {
-                            fetch(`http://localhost:5000/playlist/${data.id}`)
-                            .then(res => res.json().then(data =>{
-                                console.log(data)
-                                if (data.tracks) setToListenTo(data.tracks);
-                                else throw Error('Bad Server Data')
-                            }))
-                            .catch(err => console.warn(err))
-                        } else throw Error('Bad Server Data')
-                    })
-                }
-            )
-            .catch(err => {
-                console.error('Search Error: ', err)
-            })
+        fetch(`http://localhost:5000/toListenTo`, 
+            {
+                credentials: 'include'
+            }
+        )
+        .then( data => {
+                data.json()
+                .then(data => {
+                    console.log('to listen to - id effect data: ', data)
+                    if (data.status == 'success') {
+                        console.log(data.id)
+                        if (data.id) setToListenTo(data.id);
+                        else throw Error('Bad Resp Data');
+                    } else throw Error('Bad Server Data')
+                })
+            }
+        )
+        .catch(err => {
+            console.error('Search Error: ', err)
+        })
     },[])
     
 //getting search reuslts
     useEffect(() => {
         if (searchValue != '') {
-            fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`)
+            fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`, 
+                {
+                    credentials: 'include'
+                }
+            )
             .then( data => {
                     data.json()
                     .then(data => {
-                        console.log(data)
+                        console.log('toListenTo page-search: ', data)
                         if (data.status == 'success') setSearchResults(data.tracks);
                         else throw Error("Bad Server Error")
                     })
                 })
             .catch(err => {
-                console.error('Search Error: ', err)
+                setErrFlg(true)
+                throw Error('Search Error: ', err)
             })
         } 
     }, [searchValue, offset])
@@ -63,11 +73,12 @@ export default function ToListenToPage() {
         fetch('http://localhost:5000/toListenTo', 
             {
                 method:'POST', 
-                body: t.target.value
+                body: t.target.value,
+                credentials: 'include'
             })
         .then(res => {res.json()
             .then(data => {
-                console.log(data)
+                console.log('to listen to page: ', data)
                 if (data.status == 'success') {
                     alert("Song Addded Successfuly")
                 } else {
@@ -78,23 +89,30 @@ export default function ToListenToPage() {
         .catch(err => console.log(`toListenTo ${t.target.id} error: `, err))
     }
 
-    // function handleShowPlaylist(e) {
-    //     if (!showPlaylist) {
-    //         e.target.innerHTML = "Hide Items"
-    //     }else {
-    //         e.target.innerHTML = "Show Items"
-    //     }
-    // }
+    function handleShowPlaylist(e) {
+        if (!showingPlaylist) {
+            e.target.innerHTML = "Hide Items"
+            setShowingPlaylist(true)
+        }else {
+            e.target.innerHTML = "Show Items"
+            setShowingPlaylist(false)
+        }
+    }
 
     //next btn + back Btn
+    if (errFlg) throw Error('ToListenTo Page Error')
     return(
         <article>
             <br/>
-
-            <p className="text-center"><strong>Adding To: </strong>{'toListenTo'}</p>
-            {/* <button>Show Playlist</button>
-            <div id="playlistItems" >
-            </div> */}
+            
+            <div>
+                <p className="text-center"><strong>Adding To: </strong>{'toListenTo'}</p>
+                {toListenTo != '' && showingPlaylist ? 
+                    <PlaylistItemsCard id={toListenTo} toText={false}/>
+                     : null
+                }
+                <button className="text-center" onClick={handleShowPlaylist}>Show Items</button>
+            </div>
 
             <section id="searchbarDiv" className="text-center">
                 <input type="search" id="toListenToSearchBar"/>
@@ -111,28 +129,28 @@ export default function ToListenToPage() {
             {searchResults == {} ? null :
             <>
                 <ul className="list-group">
-                    {!searchResults.items ? null
-                        :searchResults.items.map(t =>  
-                            <li key={t.id} className="list-group-item">
-                                <TrackCard track={t}/> 
-                                {t.uri == null? null: 
+                    {!searchResults.items ? null : searchResults.items.map(t =>  
+                        <li key={t.id} className="list-group-item">
+                            <TrackCard track={t}/> 
+                            {t.uri == null? null: 
                                 <>
                                     {/* <form method="POST" action={'http://localhost:5000/toListenTo'}>
                                             <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
                                             <input type="submit" value="listenToLater"/>
-                                            </form> 
+                                        </form> 
                                     */}
 
                                     <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
                                 </>
-                                }
-                            </li>
+                            }
+                        </li>
                     )}
                 </ul>
 
                 <NavBtns
                     pageSize = {50}
                     offset = {offset}
+                    total = {searchResults.total}
                     fwrdFn = {() => {
                         //no total what is end?
                         setOffset(o => o + 50)

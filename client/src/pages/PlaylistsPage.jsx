@@ -2,68 +2,50 @@ import { useEffect, useState, createElement, useRef } from "react";
 import PlaylistCard from "../components/PlaylistCard";
 import PlaylistItemsCard from "../components/PlaylistItemsCard";
 import LoadingPage from "./LoadingPage";
+import NavBtns from "../components/NavBtns";
 
 //useTranstion on list
 //toText hidden if no value state or ref set when playlist selected
 
 export default function PlaylistsPage() {
     const [totalPlaylists, setTotalPlaylists] = useState(0) //dosent need to be state(just param in json)
-   
     const [playlistOffset, setPlayliistOffset] = useState(0)
     const [playlists, setPlaylists] = useState([])
 
-    const [playlistInfo, setPlaylistInfo] = useState([])
+
     const [playlistID, setPlaylistID] = useState('')
 
-    //set each rendee?
+    const [errFlg, setErrFlg] = useState(false)
+
+    //set each render?
     // const toTextLinkRef = useRef('')//useRef(getToTextURL(playlistInfo))
     const [textLink, setTextLink] = useState('')
 
 //gets playlists
     useEffect( ()=> {
-        fetch(`http://localhost:5000/playlists?offset=${playlistOffset}`)
+        fetch(`http://localhost:5000/playlists?offset=${playlistOffset}`, 
+            {
+                credentials: 'include'
+            })
         .then(res => {
             res.json()
             .then(data => {
-                console.log('data', data)
-
-                if (data.status == "success") { //only good case
+                // console.log('playlist page-playlist: ', data)
+                if (data.status == "success") { 
                     setTotalPlaylists(data.total)
                     setPlaylists(data.items)
-                }else { //other errs
-                    setErrFlg(true)
-                    throw Error('Bad Data Error')    
-                }
+                }else throw Error('Bad resp');
             })
             .catch( err => {
-                console.warn('Data Error:\n', err)
+                console.warn('Data Error - getting playlists: ', err)
                 setErrFlg(true)
             });
         })  
         .catch(err => {
-            console.warn('Fetch Error:\n', err)
+            console.warn('Fetch Error - getting playlists: ', err)
             setErrFlg(true)
         })
     },[playlistOffset]);
-
-//gets playlistInfo
-    useEffect( () => {
-        if (playlistID != "") { 
-            fetch(`http://localhost:5000/playlist/${playlistID}`)
-            .then(res => {
-                res.json()
-                .then(data => {
-                    if (data.status== "success") { 
-                        console.log('playlist ',data)
-                        setPlaylistInfo(data)
-                    } else {
-                        throw new Error('Gotta Problem Doc')
-                    }
-                })
-            }).catch(err => console.error('Playlist Fetch Error: ',err))
-        }
-    }, [playlistID])
-
 
 //shows&hides playlists tracks
     function handlePlaylistTracksClick(elem) {
@@ -81,7 +63,7 @@ export default function PlaylistsPage() {
         }
     }
 
-
+    if (errFlg) throw Error('Playlist Page');
     return (
         <article>
             <section id="playlistsPageInfo" className="text-center">
@@ -89,20 +71,17 @@ export default function PlaylistsPage() {
                 <h4 >Total Plalists: {totalPlaylists}</h4>
             </section>  <br/><hr/>
 
-            <section id="topNavBtns" className="text-center navBtns">
-                <span>     
-                     {`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}
-                    <span>
-                        <button onClick={()=> {
-                            setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
-                            }} className="btn btn-outline-primary">Prev</button>
-                                            
-                        <button onClick={()=> {
-                            setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                            }} className="btn btn-outline-primary">Next</button>
-                    </span>
-                </span>  
-            </section>  <br/><hr/>
+            <NavBtns id="topNavBtns"
+                pageSize={50}
+                offset={playlistOffset}
+                total={totalPlaylists}
+                fwrdFn={() => {
+                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                }}
+                bckwrdFn={()=> {
+                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                }}
+            />
             
             <section id="playlistsList">
                 <ul className="list-group">
@@ -119,28 +98,26 @@ export default function PlaylistsPage() {
                             </div>
                             
                             <div id={`${playlist.id} tracks`} >
-                                {playlist.id == playlistInfo.id //&& document.getElementById("itemsBtn").innerHTML == 'Close' Broken 
-                                ? <PlaylistItemsCard playlistData={playlistInfo}/> : null}
+                                {playlist.id == playlistID //&& document.getElementById("itemsBtn").innerHTML == 'Close' Broken 
+                                ? <PlaylistItemsCard id={playlistID}/> : null}
                             </div>
                         </li>
                     ) : "Error Getting Playlists"}
                 </ul>   
-            </section>  <br/><hr/>
+            </section> 
+            
+             <NavBtns id="btmNavBtns"
+                pageSize={50}
+                offset={playlistOffset}
+                total={totalPlaylists}
+                fwrdFn={() => {
+                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                }}
+                bckwrdFn={()=> {
+                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
+                }}
+            />
 
-            <section id="btmNavBtns" className="text-center navBtns">
-                <span>     
-                     {`${playlistOffset} - ${playlistOffset+50 < totalPlaylists? playlistOffset+50 : totalPlaylists}`} of {totalPlaylists}
-                    <span>
-                        <button onClick={()=> {
-                            setPlayliistOffset( playlistOffset => playlistOffset == 0 ? 0 : playlistOffset - 50) 
-                            }} className="btn btn-outline-primary">Prev</button>
-                                            
-                        <button onClick={()=> {
-                            setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                            }} className="btn btn-outline-primary">Next</button>
-                    </span>
-                </span>  
-            </section>
         </article>
     )
 

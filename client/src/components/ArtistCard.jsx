@@ -1,7 +1,7 @@
 import '../styles/ArtistCard.css'
 
 export default function ArtistCard({artist, size=150}) {
-    console.log(artist)
+    // console.log(artist)
 
     var res = ''
     //breaks on 2 genre artist case

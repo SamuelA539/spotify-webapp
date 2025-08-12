@@ -6,28 +6,32 @@ import UserProfileCard from "../components/UserProfileCard";
 export default function UserPage() {
     const [userInfo, setUserInfo] = useState({});
     const [userPfp, setUserPfp] = useState({});
+
+    const [errFlg, setErrFlg] = useState(false)
     
     //get userPFp data
     useEffect( () => {
-        fetch('http://localhost:5000/user')
+        fetch('http://localhost:5000/user', 
+            {
+                credentials: 'include'
+            }
+        )
         .then(res => {
             res.json()
             .then(data => {
                 console.log('data: ', data)
                 if (data.status == 'success') {
-                    setUserInfo({ //make if case
+                    setUserInfo({
                         displayName:data.display_name,
                         id: data.id,
                         email: data.email,
-                        href:data.external_urls.spotify,
+                        // href:data.external_urls.spotify,
                         followerCount: data.followers.total,
                         url: data.external_urls.spotify,
                     }) 
                     setUserPfp(data.images)
-                } else {
-                    console.log('error deteced')
-                    throw new Error('User call error: ', data.Error)
-                }               
+                } else  throw new Error('bad data error');
+                             
             })
             .catch( err => {
                 setErrFlg(true)
@@ -47,7 +51,10 @@ export default function UserPage() {
     const[topArtistsTerm, setTopArtistsTerm] = useState("short")
     useEffect(() => {
         //offset + limit < total
-        fetch(`http://localhost:5000/topArtists?term=${topArtistsTerm}&limit=${20}&offset=${0}`)
+        fetch(`http://localhost:5000/topArtists?term=${topArtistsTerm}&limit=${20}&offset=${0}`, 
+            {
+                credentials: 'include'
+            })
         .then(res => 
             res.json()
             .then(data => {
@@ -71,10 +78,14 @@ export default function UserPage() {
     const[topTracksTerm, setTopTracksTerm] = useState('short')
     useEffect(() => {
         //offset + limit < total
-        fetch(`http://localhost:5000/topTracks?term=${topTracksTerm}&limit=${20}&offset=${0}`)
+        fetch(`http://localhost:5000/topTracks?term=${topTracksTerm}&limit=${20}&offset=${0}`, 
+            {
+                credentials: 'include'
+            })
         .then(res => 
             res.json()
             .then(data => {
+                console.log('User page: ', data)
                 if (data.status) setTopTracks(data.items);
                 else throw Error('Bad Serer Data');
             })
@@ -89,7 +100,7 @@ export default function UserPage() {
         setTopTracksTerm(e.target.value)
     }
 
-
+    if (errFlg) throw Error('User Page Error')
     return (
         <article>
             <h3 className="text-center">Profile Page</h3>
@@ -183,6 +194,5 @@ export default function UserPage() {
                       
             </article>
         </article>
-    )
-    
+    )  
 }
