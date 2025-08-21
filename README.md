@@ -15,4 +15,4 @@ The react frontend uses react router to render multiple pages with various diffe
 * React-router - client side routing
 * FastAPI - logic layer
 
-Current Work in Progress
+_Current Work in Progress_
