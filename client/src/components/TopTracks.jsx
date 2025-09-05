@@ -98,7 +98,7 @@ export default function TopTracks({navBtns = false}) {
                         setOffset(o => o < total ? Number(o+pageSize) : Number(o))
                     }} 
                     bckwrdFn={() => {
-                        setOffset(o => o == 0 ? 0 : o-pageSize)
+                        setOffset(o => o-pageSize < 0 ? o : o-pageSize)
                     }}
                 /> 
             :null}
@@ -123,7 +123,7 @@ export default function TopTracks({navBtns = false}) {
                         setOffset(o => o < total ? Number(o+pageSize) : Number(o))
                     }} 
                     bckwrdFn={() => {
-                        setOffset(o => o == 0 ? 0 : o-pageSize)
+                        setOffset(o => o-pageSize < 0 ? o : o-pageSize)
                     }}
                 /> 
             :null}   

@@ -13,10 +13,15 @@ export default function NavBtns({pageSize, offset, total, fwrdFn, bckwrdFn}){
                 }    
 
                 <span>
-                    <button onClick={bckwrdFn} className="btn btn-outline-primary">Prev</button>
-                    <button onClick={fwrdFn} className="btn btn-outline-primary">Next</button>
+                    {offset - pageSize > -1 ? 
+                        <button onClick={bckwrdFn} className="btn btn-outline-primary">Prev</button>
+                    :null}
+
+                    {offset + pageSize < total ? 
+                        <button onClick={fwrdFn} className="btn btn-outline-primary">Next</button>
+                    :null}
                 </span>
             </span>  
-        </section>       
+        </section>   
     )
 }

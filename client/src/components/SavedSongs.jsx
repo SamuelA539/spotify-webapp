@@ -99,11 +99,9 @@ export default function SavedSongs() {
                 total = {total}
                 fwrdFn = {()=> {
                     setOffset(o => o+50 > total ? o : o+50)
-                    // document.documentElement.scrollTop = 0
                 }}
                 bckwrdFn = {()=> {
                     setOffset(o => o-50 < 0 ? o : o-50)
-                    // document.documentElement.scrollTop = 0
                 }}
             />
             

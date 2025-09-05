@@ -174,7 +174,7 @@ export default function ToListenToElement() {
                     total = {searchResults.total}
                     fwrdFn = {() => {
                         //no total what is end?
-                        setOffset(o => o + 50)
+                        setOffset(o => o + 50 > searchResults.total ? o : o + 50 )
                     }}
                     bckwrdFn = {() => {
                         setOffset(o => o-50 < 0 ? 0 : o-50)

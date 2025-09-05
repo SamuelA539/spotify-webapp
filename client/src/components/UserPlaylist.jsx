@@ -89,11 +89,13 @@ export default function UserPlaylists() {
                 offset={playlistOffset}
                 total={totalPlaylists}
                 fwrdFn={() => {
-                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                }}
+                    setPlayliistOffset(o => 
+                        o + 50 > totalPlaylists ? o : playlistOffset + 50
+                    ) }}
                 bckwrdFn={()=> {
-                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                }}
+                    setPlayliistOffset(o => 
+                        o-50 < 0 ? o : o-50
+                    ) }}
             />
             
             <section id="playlistsList">
@@ -124,11 +126,13 @@ export default function UserPlaylists() {
                 offset={playlistOffset}
                 total={totalPlaylists}
                 fwrdFn={() => {
-                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                }}
-                bckwrdFn={()=> {
-                    setPlayliistOffset( playlistOffset => playlistOffset + 50 > totalPlaylists ? playlistOffset : playlistOffset + 50 ) 
-                }}
+                    setPlayliistOffset( o => 
+                        o + 50 > totalPlaylists ? o : o + 50 
+                    ) }}
+                bckwrdFn={() => {
+                    setPlayliistOffset(o => 
+                        o-50 < 0 ? o : o-50
+                    ) }}
             />
 
         </article>

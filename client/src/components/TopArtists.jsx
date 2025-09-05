@@ -14,7 +14,8 @@ export default function TopArtists({navBtns = false}) {
     const [total, setTotal] = useState(0)
 
     const nav = navBtns
-    
+
+//getts to artists
     useEffect(() => {
         //offset + limit < total
         fetch(`http://localhost:5000/topArtists?term=${term}&limit=${nav?pageSize:20}&offset=${nav?offset:0}`, {credentials: 'include'})
