@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
 
-import TrackCard from "../components/TrackCard"
-import NavBtns from "../components/NavBtns"
-import PlaylistItemsCard from "../components/PlaylistItemsCard"
+import TrackCard from "./ElementCards/TrackCard"
+import NavBtns from "./BaseElems/NavBtns"
+import PlaylistItemsCard from "./ElementCards/PlaylistItemsCard"
+import { DataError, FetchError } from "./Supporting/Errors"
 
-export default function ToListenToPage() {
+export default function ToListenToElement() {
+    const [errFlg, setErrFlg] = useState({})
 
     const [searchValue, setSearchValue] = useState('')
     const [searchResults, setSearchResults] = useState({})
@@ -12,64 +14,80 @@ export default function ToListenToPage() {
     
     const [toListenTo, setToListenTo] = useState('')
     const [showingPlaylist, setShowingPlaylist] = useState(false)
-    const [errFlg, setErrFlg] = useState(false)
-
     
 
-//Get toListenTo ID
+//get toListenTo ID
     useEffect(() => {
         fetch(`http://localhost:5000/toListenTo`, 
             {
                 credentials: 'include'
             }
         )
-        .then( data => {
-                data.json()
-                .then(data => {
-                    console.log('to listen to - id effect data: ', data)
-                    if (data.status == 'success') {
-                        console.log(data.id)
-                        if (data.id) setToListenTo(data.id);
-                        else throw Error('Bad Resp Data');
-                    } else throw Error('Bad Server Data')
+        .then(data => {
+            data.json()
+            .then(data => {
+                console.log('to listen to - id effect data: ', data)
+                if (data.status == 'success') {
+                    if (!data.id) throw Error('Bad Resp Data'); //syntax error
+                    else setToListenTo(data.id);
+                } else throw Error('Bad Server Data');  //syntax error
+            })
+            .catch (err => {
+                console.warn('Data Error - getting toListenTo: ', err)
+                setErrFlg({
+                    status: true,
+                    errType: 'data', 
+                    msg: 'Error Getting toListenTo Info'
                 })
-            }
-        )
-        .catch(err => {
-            console.error('Search Error: ', err)
+            })
+        })
+        .catch(err => { //fetch error
+            console.warn('Fetch Error - getting toListenTo: ', err)
+            setErrFlg({
+                status: true,
+                errType: 'fetch', 
+                msg: 'Error Getting toListenTo Info'
+            })
         })
     },[])
     
 //getting search reuslts
     useEffect(() => {
         if (searchValue != '') {
-            fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`, 
-                {
-                    credentials: 'include'
-                }
-            )
-            .then( data => {
-                    data.json()
-                    .then(data => {
-                        console.log('toListenTo page-search: ', data)
-                        if (data.status == 'success') setSearchResults(data.tracks);
-                        else throw Error("Bad Server Error")
+            fetch(`http://localhost:5000/search?searchstr=${searchValue}&offset=${offset}`, {credentials: 'include'})
+            .then(data => {
+                data.json()
+                .then(data => {
+                    console.log('toListenTo page-search: ', data)
+                    if (data.status == 'success') setSearchResults(data.tracks);
+                    else throw Error("Bad Server Data")
+                })
+                .catch(err => {
+                    console.warn('Data Error - getting search results: ', err)
+                    setErrFlg({
+                        status: true,
+                        errType: 'data', 
+                        msg: 'Error Getting Search Results'
                     })
                 })
+            })
             .catch(err => {
-                setErrFlg(true)
-                throw Error('Search Error: ', err)
+                console.warn('Fetch Error - getting search results: ', err)
+                setErrFlg({
+                    status: true,
+                    errType: 'fetch', 
+                    msg: 'Error Getting Search Results'
+                })
             })
         } 
     }, [searchValue, offset])
 
+//Adds track to toListenTo playlist
+    //TODO error handling
     function handleToListenToClick(t) {
         var uri = t.target.value
         var body = JSON.stringify({songURI: t.target.value})
 
-        // console.log('target: ',uri)
-        // console.log('body: ', body)
-        //422 unprocessable Entity TODO read fastapi docs
         fetch('http://localhost:5000/toListenTo', 
             {
                 method:'POST', 
@@ -82,13 +100,15 @@ export default function ToListenToPage() {
                 if (data.status == 'success') {
                     alert("Song Addded Successfuly")
                 } else {
-                    alert("Error Adding song")
+                    alert("Error Saving song")
                     throw Error('Bad Server Data')
                 }
             })})
         .catch(err => console.log(`toListenTo ${t.target.id} error: `, err))
     }
 
+//Shows tracks in toListenTo playlist
+    //TODO error handling
     function handleShowPlaylist(e) {
         if (!showingPlaylist) {
             e.target.innerHTML = "Hide Items"
@@ -99,8 +119,17 @@ export default function ToListenToPage() {
         }
     }
 
-    //next btn + back Btn
-    if (errFlg) throw Error('ToListenTo Page Error')
+    if (Object.keys(errFlg).length > 0 && errFlg.status) {
+        switch(errFlg.errType) {
+            case('data'):
+                throw DataError(errFlg.msg)
+                break
+            case('fetch'):
+                throw FetchError(errFlg.msg)
+                break
+        }
+    }
+
     return(
         <article>
             <br/>
@@ -126,23 +155,15 @@ export default function ToListenToPage() {
             <br/><br/>
 
             {/* search results ?component?*/}
-            {searchResults == {} ? null :
+            {Object.keys(searchResults) <= 0 ? null :
             <>
                 <ul className="list-group">
                     {!searchResults.items ? null : searchResults.items.map(t =>  
                         <li key={t.id} className="list-group-item">
-                            <TrackCard track={t}/> 
-                            {t.uri == null? null: 
-                                <>
-                                    {/* <form method="POST" action={'http://localhost:5000/toListenTo'}>
-                                            <input type="text" name="songURI" id={`${t.id} text`} value={String(t.uri)} required hidden/>
-                                            <input type="submit" value="listenToLater"/>
-                                        </form> 
-                                    */}
-
-                                    <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
-                                </>
-                            }
+                            <TrackCard track={t} height={125} width={125}/> 
+                            {t.uri != null ? 
+                                <button id={t.id+' btn'} value={t.uri} onClick={handleToListenToClick}>listenToLater</button>
+                            :null}
                         </li>
                     )}
                 </ul>

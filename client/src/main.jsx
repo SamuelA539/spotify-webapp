@@ -1,124 +1,50 @@
-import { StrictMode, useContext, useEffect, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 // import './index.css'
 
 //routing imports 
-import {createBrowserRouter, Outlet, RouterProvider, useLoaderData} from "react-router"
+import {createBrowserRouter, RouterProvider} from "react-router"
 
-// ---  components  ---
-import NavBar from './components/NavBar'
-import { PageErrorBoundry } from './components/PageErrorBoundry'
 
-//  --- page components  ---
+//  --- pages  ---
 
-//stand alone
-import HomePage from './pages/HomePage'
-import ToListenToPage from './pages/ToListenToPage'
-import LoginPage from './pages/LoginPage'
+import BaseLayout from './PageLayouts/BaseLayout'
+import HomeElement from './components/Home'
+import ToListenToElement from './components/ToListenTo'
+import LoginElement from './components/Login'
 import LoadingPage from './pages/LoadingPage'
+import FallbackElement from './components/Supporting/FallBackElement'
 
 //playlist pages
-import PlaylistsPage from './pages/PlaylistsPage'
-import SavedSongsPage from './pages/SavedSongsPage'
+import PlaylistLayout from './PageLayouts/PlaylistLayout'
+import UserPlaylists from './components/UserPlaylists'
+import SavedSongs from './components/SavedSongs'
 
 //user pages
-import UserPage from './pages/UserPage'
-import TopTracksPage from './pages/TopTracksPage'
-import TopArtistsPage from './pages/TopArtistsPage'
-
+import UserLayout from './PageLayouts/UserLayout'
+import UserElement from './components/User'
+import TopTracks from './components/TopTracks'
+import TopArtists from './components/TopArtists'
 
 import { createContext } from "react";
 export const LoggedContext = createContext(false)
 
 
-
+// querys userendpoint to check if user is logged
 async function clientLoader() {
-  var resp = await fetch(
-    "http://localhost:5000/user", 
-    {
-        credentials: 'include'
-    }
-  )
-  var data = await resp.json()
-  // console.log('loader data: ', data.logged)
-  return data.logged ? data.logged == 'true' : false 
+  //fix try catch
+  try 
+  { 
+    var resp = await fetch("http://localhost:5000/user", {credentials: 'include'})
+    var data = await resp.json()
+    // console.log('loader data: ', data.logged)
+    return data.logged ? data.logged == 'true' : false 
+  }
+  catch(err) 
+  {
+    throw err
+  }
 }
-
-function BaseLayout() {
-  const logged = useContext(LoggedContext);
-  const loaderData = useLoaderData()
-  // console.log('Base component loader data: ', loaderData)
-
-  return (
-    <LoggedContext.Provider value={loaderData}>  
-        <header>
-            <NavBar/> 
-        </header> <br/>
-        <main>
-          <PageErrorBoundry>
-            {/* <Outlet/> */}
-            {loaderData ? <Outlet/> : <LoginPage/>}
-          </PageErrorBoundry>
-        </main>
-    </LoggedContext.Provider>
-  ) 
-}
-
-//TODO configure
-export function FallbackElement(){
-  return(
-    <>Loading</>
-  )
-}
-
-function PlaylistLayout() {
-  const logged = useContext(LoggedContext);
-  const [logState, setLogState] = useState(logged);
-
-//backend logged check
-  useEffect(() => {
-  fetch("http://localhost:5000/playlists")
-    .then(res => res.json().then(data => {
-      if (data.status === 'success') {
-        console.log(data)
-        setLogState(true)
-      }
-    }))
-    .catch(err => console.error("Root Login error: ", err))
-    }, 
-  [])
-
-  return (
-    <article> 
-      {logged ? <Outlet/> : <LoadingPage/>}
-    </article>
-  )
-}
-
-function UserLayout() {
-  const logged = useContext(LoggedContext);
-  const [logState, setLogState] = useState(false);
-
-//backend logged check
-  useEffect(() => {
-  fetch("http://localhost:5000/user")
-    .then(res => res.json().then(data => {
-      if (data.status === 'success') {
-        console.log(data)
-        setLogState(true)
-      }
-    }))
-    .catch(err => console.error("Root Login error: ", err))
-    }, 
-  [])
-  
-  return (
-    <article> 
-      {logged ? <Outlet/> : <LoadingPage/>}   
-    </article>
-  )
-}
-
 
 
 const router = createBrowserRouter(
@@ -131,25 +57,25 @@ const router = createBrowserRouter(
         {
           index:true, 
           // path:'login', 
-          element:<LoginPage/>   //<HomePage/> 
+          element:<LoginElement/>   //<HomePage/> 
         },
         { //home
           path:'home', 
-          element:<HomePage/>,
+          element:<HomeElement/>,
           // HydrateFallback: FallbackElement
         },
         { //playlists
           path:'playlists', 
-          // element:<PlaylistLayout/>,
+          element:<PlaylistLayout/>,
           children: [
             {
               index: true,
               path: '/playlists/saved', 
-              element: <SavedSongsPage/>,
+              element: <SavedSongs/>,
             },
             {
               path: '/playlists/all',
-              element: <PlaylistsPage/>,
+              element: <UserPlaylists/>,
             },  
           ]
         },
@@ -159,26 +85,28 @@ const router = createBrowserRouter(
           children: [
             {
               index:true,
-              element: <UserPage/>
+              element: <UserElement/>
             },
             {
               path: '/profile/topTracks',
-              element: <TopTracksPage/>
+              element: <TopTracks navBtns={true}/>
             },
             {
               path: '/profile/topArtists',
-              element: <TopArtistsPage/>
+              element: <TopArtists navBtns={true}/>
             },
           ]
         },
         { //toListenTo
           path:'toListenTo', 
-          element:<ToListenToPage/>
+          element:<ToListenToElement/>
         },
       ],
     },
   ]
 );
+
+
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

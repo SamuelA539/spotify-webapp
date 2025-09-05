@@ -67,7 +67,6 @@ def setSecrets():
 #refreshes access token
 #TODO test
 def refreshToken(refreshToken: str):
-    # refreshTkn = refreshToken if refreshToken else os.getenv('Refresh_Token')
     if refreshToken: # can be refreshed 
         response = requests.post(
             TOKEN_URL, 
@@ -87,9 +86,8 @@ def refreshToken(refreshToken: str):
             if 'access_token' in newTokenInfo:
                 accessTokenTime = datetime.now().timestamp() + newTokenInfo['expires_in']
                 return newTokenInfo['access_token'], str(datetime.fromtimestamp(accessTokenTime))
-            else: 
-                print('refresh error')
-        print(response)
+            
+        print('refresh error', response)
         raise HTTPException(status_code=500, detail="Bad Server Refresh Request Response")
     raise HTTPException(status_code=500, detail="Refresh method call Error")
 
@@ -100,28 +98,22 @@ def querySpotify(accessToken: str, expTime: str, endpoint: str = ''):
     print('Querying')
 
     if endpoint and datetime.fromisoformat(expTime) > datetime.now() and accessToken:
-        print(
-            'endpoint: ', endpoint,
-            'accessToken: ', accessToken, 
-            'exp time: ', expTime,
-            'datetime comp: ',datetime.fromisoformat(expTime) > datetime.now() )
         response = requests.get(
             f"{API_BASE_URL}{endpoint}", 
             headers={
                 'Authorization': 'Bearer '+ accessToken
             }
         )
-        
+
         if 199 < response.status_code < 400: 
             info = response.json()
             info.update({'status':'success'})
             print('token  success')
             return info
-
         print('request error ', 'response:', response)
         return {"status":'error', 'details': 'bad response'}   
     else:   #token error ||  endpoint type error
-        print('other error')
+        print('param error')
         return {"status":'error', 'details': 'param error'}         
         
 
@@ -149,6 +141,7 @@ def login(userCred: Annotated[userCredCookies, Cookie()]):
         else:
             print('cookies not found')
             return RedirectResponse(f"{AUTH_URL}?response_type=code&client_id={os.getenv('client_id')}&scope={scope}&redirect_uri={REDIRECT_URI}&show_dialog=True")
+    print('secrets error')
     return 'error'
     
 
@@ -164,7 +157,6 @@ def callback(code: str | None = None):
         idSecret = os.getenv('client_id')+":"+os.getenv('client_secret')
         bytesS = idSecret.encode("utf-8")
         auth_base64 = str(base64.b64encode(bytesS), "utf-8")
-
         resp = requests.post(
             TOKEN_URL, 
             data= {
@@ -177,9 +169,9 @@ def callback(code: str | None = None):
                 'Authorization': "Basic "+ auth_base64
             }
         )
+
         if 199 < resp.status_code < 300:
             token_info = resp.json()
-            print('token info: ', token_info)
             accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
 
             ### ALT ###
@@ -196,28 +188,19 @@ def callback(code: str | None = None):
             usrQuery = querySpotify(os.environ['Access_Token'], os.environ['Expire_Time'], 'me')
             if usrQuery['status'] == 'success':
                 usrID = usrQuery['id']
-
                 for dir in os.scandir():
                     if (dir.name == usrID):
                         exists = True
-
                 if (not exists):
                     os.mkdir(usrID)
-            
+
+                print('callback success')
                 return response
             #no usr dir - no toText
-
+    print('callback error')
     return 'error'
 
-# #TODO remove
-# @app.get('/refresh', summary="Refreshes user's spotify access token")
-# def refresh(userCred: Annotated[userCredCookies, Cookie()],):
-#     print('refresh endpt')
-#     if refreshToken(): 
-#         # return RedirectResponse('http://localhost:5173/home')
-#         return {'status': 'success'}
-#     return 'error'
-
+#TODO test redirect
 @app.get('/logout', summary="Clears user's spotify access data from server")
 def logout(response: Response ):
     print('logout endpt')
@@ -225,6 +208,7 @@ def logout(response: Response ):
     response.delete_cookie("refresh_token")
     response.delete_cookie("expire_time")
     # return 'success'
+    print('log out success')
     return RedirectResponse(frontendURL)
 
 
@@ -238,7 +222,6 @@ def termValidator(term:str):
 
 #errs 
 #   query failure
-
 @app.get('/user', summary="Returns user's profile info")
 def user(
     userCred: Annotated[userCredCookies, Cookie()], 
@@ -258,24 +241,24 @@ def user(
     else:
         print('cookies')
         if datetime.fromisoformat(str(userCred.expire_time)) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
 
             userInfo = querySpotify(accessTok, expTime, 'me')
         else:
-            print('simple querry')
+            print('cookie querry')
             userInfo = querySpotify(
                 accessToken=userCred.access_token, 
                 expTime=userCred.expire_time, 
                 endpoint='me')
-            print('cookie userinfo: ', userInfo)
 
     if userInfo and userInfo['status'] == 'success':
         userInfo.update({'logged':'true'})
         return userInfo
-            
+
+    print('user endpt - error')       
     return 'error'
 
 #errs 
@@ -291,7 +274,7 @@ def savedSongs(
     print('savedSongs endpt')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -302,7 +285,8 @@ def savedSongs(
         
         if savedSongs and savedSongs['status'] == 'success':
             return savedSongs
-
+    
+    print('savedSongs endpt - error')
     return 'error'
 
 
@@ -316,7 +300,7 @@ def savedSongsToText(response: Response, userCred: Annotated[userCredCookies, Co
     print('\nsaved songs toText')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -330,9 +314,10 @@ def savedSongsToText(response: Response, userCred: Annotated[userCredCookies, Co
             path = f"{userInfo['id']}/{filename}.txt"
             f = open(path, 'w')
             f.write("Format: Song, album - artists \n\n")
-            
+        
             size = 0
             nextTracks = f'{API_BASE_URL}{f'me/tracks?offset={0}&limit={50}'}'
+
             while nextTracks and size < 10000:
                 resp = requests.get(
                     nextTracks,
@@ -357,11 +342,10 @@ def savedSongsToText(response: Response, userCred: Annotated[userCredCookies, Co
                         f.write(f'{name}, {album} - {artistNames}\n')
                         size += 1
 
-                        print(f'{name}, {album} - {artistNames}')
+                        # print(f'{name}, {album} - {artistNames}')
                         print(f"saved song progress {size}/{resp['total']}" )
-
+                    
                     nextTracks = resp['next']
-                    # print('next url: ', nextTracks)
                 else:
                     #error
                     print('error loading tracks ', resp.status_code)
@@ -371,6 +355,7 @@ def savedSongsToText(response: Response, userCred: Annotated[userCredCookies, Co
             print('Songs Saved: ', size)
             return path
 
+    print('savedSong(toText) endpt -  error')
     return 'error'
 
 #errs 
@@ -385,7 +370,7 @@ def topArtists(
     print('topArtist endpt')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time and termValidator(term):
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -397,7 +382,8 @@ def topArtists(
         if topArtists['status'] == 'success':
             return topArtists
     
-    return 'Error'
+    print('topArtists endpt - error')
+    return 'error'
 
 #errs 
 #   query failure
@@ -411,7 +397,7 @@ def topTracks(
     
     if userCred.access_token and userCred.refresh_token and userCred.expire_time and termValidator(term):
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -423,6 +409,7 @@ def topTracks(
         if topTracks['status'] == 'success':
             return topTracks
     
+    print('topTracks endpt - error')
     return 'Error'
 
 
@@ -440,7 +427,7 @@ def playlists(
     print('playlist endpt')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -452,7 +439,8 @@ def playlists(
         if playlistsInfo['status'] == 'success':
             playlistsInfo.update({'logged':'true'})
             return playlistsInfo 
-    
+
+    print('playlist endpt - error')
     return 'error'
 
 #check spotify playlist id restrictions for path checks
@@ -465,7 +453,7 @@ def toText(
     print(f'\n---toText {playlistID} endpt---\n')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -480,25 +468,30 @@ def toText(
             path = f"{userInfo['id']}/{playlistInfo['name']}.txt"
             f = open(path, 'w')
             f.write("Format: Song, album - artists \n\n")
-            for track in playlistInfo['tracks']:
-                name = track['track']['name']
-                album = track['track']['album']['name']
+            size = 0
+            
+            print('playlisttoText tracks: ', playlistInfo['tracks']['total'])
+
+            for track in playlistInfo['tracks']['items']:
+                print('name: ', track['track']['name'])
+                print('album: ', track['track']['album']['name'])
                 
                 #TODO get all artist + features (str formating)
-                artists = track['track']['artists']
                 artistNames = ''
-                for artist in artists:
+                for artist in track['track']['artists']:
                     if artist['type'] == 'artist':
                         artistNames = artist['name'] + ', '
                 
-                f.write(f'{name}, {album} - {artistNames}\n')
+                f.write(f'{track['track']['name']}, {track['track']['album']['name']} - {artistNames}\n')
                 size += 1
 
-                print(f'{name}, {album} - {artistNames}')
-                print(f"saved song progress {size}/{playlistInfo['total']}" )
+                print(f'{track['track']['name']}, {track['track']['album']['name']} - {artistNames}')
+                print(f"saved song progress {size}/{playlistInfo['tracks']['total']}" )
+            
             f.close()        
             return path
-        
+
+    print('playlist(toText) endpt - error')
     return 'error'
 
 #errs 
@@ -512,7 +505,7 @@ def playlist(
     print(f'playlist {playlistID} endpt')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -523,8 +516,9 @@ def playlist(
     
         if playlistInfo['status'] == 'success':
             return playlistInfo
-        
-    return 'Error'
+
+    print(f'playlist {playlistID} endpt - error')    
+    return 'error'
 
 #errs 
 #   query failure
@@ -536,7 +530,7 @@ def addtoListenTo(response: Response, userCred: Annotated[userCredCookies, Cooki
     toListenTo = ''
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -545,7 +539,7 @@ def addtoListenTo(response: Response, userCred: Annotated[userCredCookies, Cooki
         else:
             playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me/playlists?limit=50')
 
-        if playlistInfo['status'] == 'succes':        
+        if playlistInfo['status'] == 'success':        
             while (playlistInfo['next']):   #finding toListenTo
                 for playlist in playlistInfo['items']:
                     if (playlist["description"] == 'toListenTo'):
@@ -587,6 +581,7 @@ def addtoListenTo(response: Response, userCred: Annotated[userCredCookies, Cooki
                     return {"status":"success", "id": toListenTo}
                 # else: # errror
 
+    print('post toListenTo endpt - error')
     return "error"
 
 #errs 
@@ -599,14 +594,14 @@ def getToListenTo(response:Response, userCred: Annotated[userCredCookies, Cookie
     toListenTo = ''
     if userCred.access_token and userCred.refresh_token and userCred.expire_time:
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
 
             playlistInfo = querySpotify(accessTok, expTime, 'me/playlists?limit=50')
         else:
-            print('cookie querey')
+            print('cookie querry')
             playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me/playlists?limit=50')
 
         if playlistInfo['status'] == 'success':  
@@ -625,7 +620,6 @@ def getToListenTo(response:Response, userCred: Annotated[userCredCookies, Cookie
                 else:
                     raise HTTPException(status_code=500, detail='Server Request Error')
     
-            # print('to listen to id: ', toListenTo)
             if (toListenTo == ''):  #creating playlist
                 userID = querySpotify('me')['id']
                 if playlistInfo['status'] == 'success':   
@@ -644,10 +638,10 @@ def getToListenTo(response:Response, userCred: Annotated[userCredCookies, Cookie
 
             if toListenTo:
                 return {"id": toListenTo, 'status': 'success'}
-        else:
-            print('query error')
+
     
     # raise HTTPException(status_code=500, detail="Error getting toListenTo playlist id")
+    print('getToListenTo endpt - error')
     return "error"
 
 
@@ -659,7 +653,7 @@ def itemTypeValidator(type):
 #errs 
 #   query failure
 @app.get('/search', summary="Returns search results of search string")
-def toListenTo(
+def search(
     response: Response, 
     userCred: Annotated[userCredCookies, Cookie()], 
     searchstr: str, 
@@ -669,7 +663,7 @@ def toListenTo(
     print('search endpt')
     if userCred.access_token and userCred.refresh_token and userCred.expire_time and itemTypeValidator(itemType):
         if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh token')
+            print('refesh querry')
             accessTok, expTime = refreshToken(userCred.refresh_token)
             response.set_cookie(key='access_token', value=accessTok)
             response.set_cookie(key="expire_time", value=expTime)
@@ -682,6 +676,7 @@ def toListenTo(
             return itemInfo
     
     # raise HTTPException(status_code=500, detail='Error getting Search Results')
+    print('search endpt - error')
     return "error"
 
 

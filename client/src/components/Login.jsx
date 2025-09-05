@@ -1,6 +1,6 @@
 import { useContext } from "react"
 
-export default function LoginPage() {
+export default function LoginElement() {
     return (
       <article className="text-center">
         <h4>Welcome To Sam's Site</h4> <br/>

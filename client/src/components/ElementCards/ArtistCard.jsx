@@ -1,10 +1,7 @@
-import '../styles/ArtistCard.css'
+import '../../styles/ArtistCard.css'
 
 export default function ArtistCard({artist, size=150}) {
-    // console.log(artist)
-
     var res = ''
-    //breaks on 2 genre artist case
     if (typeof artist != 'undefined' && typeof artist.genres != undefined){
         for (var i in artist.genres) {
             if (i == 0 || i == artist.genres.length) res = res + artist.genres[i];
@@ -30,7 +27,7 @@ export default function ArtistCard({artist, size=150}) {
                 alt={`${artist.name} profile photo`} 
                 height={size}
                 width={size}/>
-            </div>
+            </div> 
             <div>
                 <a href={artist.external_urls.spotify}><h3>{artist.name}</h3></a>
                 {/* <h6>({artist.type})</h6> */}

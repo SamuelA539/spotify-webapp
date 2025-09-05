@@ -1,12 +1,12 @@
 import { Link } from "react-router"
 import { useContext } from "react"
-import { LoggedContext } from "../main"
+import { LoggedContext } from "../../main"
 
-import '../styles/Navbar.css'
+import '../../styles/Navbar.css';
 
 export default function NavBar() {
     const logged = useContext(LoggedContext)
-    console.log('nav log: ',logged)
+    console.log('nav log: ', logged)
 
     return (
         <nav className="text-center">

@@ -1,8 +1,7 @@
-import '../styles/PlaylistCard.css'
+import '../../styles/PlaylistCard.css'
 
-//component for displaying each Playlist
+//component for displaying a Playlist
 export default function PlaylistCard({playlist, size=150}) {
-    //props atrbs: playlist{ name, owner, description, url, images, numTracks, visibility}
     
     if (playlist.images) {
         playlist.images.sort((a,b) => a.height-b.height) //check objs are real images

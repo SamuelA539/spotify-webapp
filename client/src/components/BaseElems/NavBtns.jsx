@@ -1,4 +1,4 @@
-import "../styles/NavBtns.css"
+import "../../styles/NavBtns.css"
 
 export default function NavBtns({pageSize, offset, total, fwrdFn, bckwrdFn}){
     // console.log('Nav Btns: ', typeof total == 'undefined', total)
@@ -17,7 +17,6 @@ export default function NavBtns({pageSize, offset, total, fwrdFn, bckwrdFn}){
                     <button onClick={fwrdFn} className="btn btn-outline-primary">Next</button>
                 </span>
             </span>  
-        </section>
-        
+        </section>       
     )
 }

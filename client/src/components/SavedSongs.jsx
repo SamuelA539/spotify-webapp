@@ -1,23 +1,21 @@
 import { useEffect, useState } from "react"
-import TrackCard from "../components/TrackCard"
-import NavBtns from '../components/NavBtns'
 
-import LoadingPage from "./LoadingPage"
-
+import TrackCard from "./ElementCards/TrackCard"
+import NavBtns from './BaseElems/NavBtns'
+import { DataError, FetchError} from "./Supporting/Errors";
 
 //displays saved songs
-export default function SavedSongsPage() {
+export default function SavedSongs() {
+    const [errFlg, setErrFlg] = useState({})
+    
     const [songs, setSongs] = useState({})
     const [total, setTotal] = useState(0)
     const [offset, setOffset] = useState(0)
 
-    const [errFlg, setErrFlg] = useState(false)
 
+//fetching saved songs
     useEffect(()=> {
-        fetch(`http://localhost:5000/savedSongs?offset=${offset}`, 
-            {
-                credentials: 'include'
-            })
+        fetch(`http://localhost:5000/savedSongs?offset=${offset}`, {credentials: 'include'})
         .then( res => res.json()
             .then( data => {
                 console.log('Saved songs page: ', data)
@@ -27,50 +25,70 @@ export default function SavedSongsPage() {
                 } else throw Error('Bad Data Error');
             })
             .catch(err => {
-                setErrFlg(true)
-                console.error('Data Error: ', err)
+                console.warn('Data Error - getting Saved Songs: ', err)
+                setErrFlg({
+                    status: true,
+                    errType: 'data', 
+                    msg: 'Error Getting Saved Songs'
+                })
             })
         )
         .catch(err => {
-            setErrFlg(true)
-            console.error('Fetch Error: ', err)
+            console.warn('Fetch Error - getting Saved Songs: ', err)
+            setErrFlg({
+                status: true,
+                errType: 'fetch', 
+                msg: 'Error Getting Saved Songs'
+            })
         })
     }, [offset])
 
+//Downloads text file of savedsongs
+    //TODO error handle
     function handleToTextClick(elem){
         alert("please be patient playlists over 1000 have long load times")
-        console.log(elem.target)
-        // let id = elem.target.id.slice(0, -7)
-        console.log('id: ', id)
 
         fetch(`http://localhost:5000/savedSongs/toText/`, 
             {
                 credentials: 'include'
             })
-        .then(res => res.blob().then( blob => {
+        .then(res => res.blob()
+            .then( blob => {
                 console.log(blob)
                 if (blob){
-                    let url = URL.createObjectURL(blob);    console.log(url)
+                    let url = URL.createObjectURL(blob); //console.log(url)
                     var anch = document.createElement('a')
                     anch.href = url
                     anch.download = 'savedSongs'
                     anch.click()
-
                     URL.revokeObjectURL(url)
                     anch.remove()
-                }
+                } else {
+                    throw Error('Bad Data Error')
+                }   
             })
-        ).catch(err => console.log('handleTestClick Error: ', err), setErrFlg(true))
+        ).catch(err => { //TODO handle
+            console.warn('handleTestClick Error: ', err) 
+        })
     }
 
-    if (errFlg) throw Error('Saved Songs page Error')
+    if (Object.keys(errFlg).length > 0 && errFlg.status) {
+        switch(errFlg.errType) {
+            case('data'):
+                throw DataError(errFlg.msg)
+                break
+            case('fetch'):
+                throw FetchError(errFlg.msg)
+                break
+        }
+    } 
+
     return (
-        <article>  
-            
+        <article>         
             <section className="text-center">
                 <h2>Saved Songs</h2>
-                <button onClick={handleToTextClick}>ToText</button>
-                {/* <h3>Total Saved Songs: {total}</h3>  */}
+                <h3>Total Saved Songs: {total}</h3>  
+                <button onClick={handleToTextClick}>ToText</button>   
             </section> 
             
             <br/><hr/>
@@ -93,16 +111,15 @@ export default function SavedSongsPage() {
 
             <ul className="list-group">
                 {typeof songs != 'undefined'? 
-                    songs.length > 0? songs.map(t => 
-                        <li key={t.track.id} className="list-group-item"> 
-                            <TrackCard track={t.track}/> 
-                            {/* Print Date Different */}
-                            <p>Date Added: {Date(t.added_at)}</p>
-                        </li>
-                    )
-                    :'No Saved Songs' 
-                :null
-                }
+                    songs.length > 0? 
+                        songs.map(t => 
+                            <li key={t.track.id} className="list-group-item"> 
+                                <TrackCard track={t.track} height={125} width={125}/> 
+                                <p>Date Added: {Date(t.added_at)}</p>
+                            </li>
+                        ) 
+                        :'No Saved Songs' 
+                :null}
             </ul>
 
             <NavBtns
@@ -118,7 +135,6 @@ export default function SavedSongsPage() {
                     document.documentElement.scrollTop = 0
                 }}
             />
-
         </article>
     )
 
