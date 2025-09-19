@@ -14,13 +14,7 @@ export default function UserProfileCard({height, width}) {
             .then(data => {
                 console.log('home page data: ', data)
                 if (data.status == 'success') 
-                    setUserInfo({
-                        displayName: data.display_name,
-                        id: data.id,
-                        followers: data.followers.total,
-                        url: data.external_urls.spotify,
-                        images: data.images
-                    });
+                    setUserInfo(data.user);
                 else throw Error('Bad Server Data');
             })
             .catch(err => {
@@ -46,10 +40,8 @@ export default function UserProfileCard({height, width}) {
         switch(errFlg.errType) {
             case('data'):
                 throw new DataError(errFlg.msg)
-                break
             case('fetch'):
                 throw new FetchError(errFlg.msg)
-                break
         }
     }
 
@@ -66,12 +58,12 @@ export default function UserProfileCard({height, width}) {
                         width={width}></img>  
                     
                     <div id="userInfoText">
-                        <h3 id="userName" className="col" >{userInfo.displayName !== undefined ? userInfo.displayName : null}</h3>
+                        <h3 id="userName" className="col" >{userInfo.name !== undefined ? userInfo.name : null}</h3>
                         <a href={userInfo.url !== undefined ? userInfo.url : null} target="_blank" className="col">
                             <h4 id='userID'>{userInfo.id !== undefined ? userInfo.id : null}</h4> 
                         </a>
-                    </div> 
-                    <p>Follower Count: {userInfo.followerCount}</p>
+                    </div> s
+                    <p>Follower Count: {userInfo.follower_count}</p>
             </section>
         )
     }

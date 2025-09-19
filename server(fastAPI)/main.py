@@ -8,7 +8,7 @@ from datetime import datetime
 
 # from app import exceptions
 import base64, os, requests 
-#from fastapi.requests import Request 
+#from fastapi.requests import Request #TODO check
 
 AUTH_URL = 'https://accounts.spotify.com/authorize'
 TOKEN_URL = 'https://accounts.spotify.com/api/token'
@@ -18,7 +18,7 @@ scope = 'playlist-read-private ' \
 'playlist-read-collaborative playlist-modify-private playlist-modify-public ' \
 'user-library-read user-top-read'
 
-frontendURL='http://localhost:5137/'
+frontendURL='http://localhost:5137'
 REDIRECT_URI = 'http://127.0.0.1:5000/callback'  
 
 app = FastAPI()
@@ -41,13 +41,179 @@ app.add_middleware(
 )
 
 class userCredCookies(BaseModel):
-    access_token: str | None = None
-    refresh_token: str | None = None
-    expire_time: str | None = None
+    access_token: str
+    refresh_token: str
+    expire_time: str
+
+
+class User():
+    def __init__(self, name, url, follower_count, user_id, images, uri):
+        self.name = name
+        self.url = url
+        self.follower_count = follower_count
+        self.images = images 
+        
+        self.id = user_id
+        self.uri = uri
+    
+    def __str__(self):
+        return (f"User - name: {self.name} id: {self.id}\t" + 
+                f"[followerCount: {self.follower_count} url: {self.url} uri: {self.uri}]")
+        
+def createUser(user_info):
+    # print('creating user: ', user_info)
+    user = User(
+        name = user_info['display_name'],
+        url = user_info['external_urls']['spotify'],
+        follower_count = user_info['followers']['total'],
+        images = user_info['images'], 
+        user_id = user_info['id'],
+        uri = user_info['uri'],
+    )
+    print(user)
+    return user
+
+#TODO slim ablum[images, url, name, release date, id, uri] and artist[url, name, id, uri] objs
+class Track():
+    def __init__(self, name, popularity, track_id, explicit, add_date, uri, url, album=None, artists=None):
+        self.name = name
+        self.popularity = popularity
+        self.id = track_id
+        self.explicit = explicit
+        self.add_date = add_date
+        self.album = album
+        self.artists = artists
+        self.url = url
+        
+        self.uri = uri
+    
+    def __str__(self):
+        return (f"Track: {self.name}, {self.album}-{self.artists}\t" +
+                f"[date: {self.add_date} popularity: {self.popularity} explicit:{self.explicit} uri:{self.uri} id:{self.id} url: {self.url}]")
+
+def createTrack(track_info, add_date=None):
+    # print('creating track: ', track_info)
+    track_info['album'].pop("available_markets")
+    track = Track(
+        name = track_info['name'],
+        popularity = track_info['popularity'],
+        track_id = track_info['id'],
+        explicit = track_info['explicit'],
+        add_date = add_date,
+        uri = track_info['uri'],
+        url = track_info['external_urls']['spotify'],
+        album = track_info['album'],
+        artists = track_info['artists']
+    )
+    # print(track)
+    return track
+
+class Artist():
+    def __init__(self, name, url, genres, follower_count, images, popularity, artist_id, uri):
+        self.name = name
+        self.url = url
+        self.follower_count = follower_count
+        self.genres = genres
+        self.images = images
+        self.popularity = popularity
+
+        self.id = artist_id
+        self.uri = uri
+    
+    def __str__(self):
+        return (f"Artist: {self.name}" 
+                + f"[genres: {self.genres} popularity: {self.popularity} uri: {self.uri} id: {self.id}")
+
+def createArtist(artist_info):
+    # print('creating artist: ', artist_info)
+    artist = Artist(
+        name = artist_info['name'],
+        url = artist_info['external_urls']['spotify'],
+        follower_count = artist_info['followers']['total'],
+        genres = artist_info['genres'],
+        images = artist_info['images'],
+        popularity = artist_info['popularity'],
+        artist_id = artist_info['id'],
+        uri = artist_info['uri']
+    )
+    # print(artist)
+    return artist
+    
+#TODO format
+class Album():
+    def __init__(self, name, num_tracks, release, album_type, popularity, images, url, artists, tracks, uri, album_id):
+        self.name = name
+        self.num_tracks = num_tracks
+        self.release = release
+        self.type = album_type
+        self.popularity = popularity
+        self.images = images
+        self.url = url
+
+        self.artists = artists
+        self.tracks = tracks
+        
+        self.uri = uri
+        self.id = album_id
+    
+    def __self__(self):
+        return (f"{self.name}-{self.artists}" 
+                + f"[tracknum: {self.num_tracks} release: {self.release} type: {self.type} popularity: {self.popularity} uri: {self.uri} id: {self.id}]")
+
+def createAlbum(album_info):
+    print('creating album: ', album_info)
+
+class Playlist():
+    def __init__(self, name, description, owner, tracks, primary_color, public, collaborative, url, images, uri, playlist_id):
+        self.name = name
+        self.description = description
+        self.owner = owner #simple user
+        self.tracks = tracks #array of tracks
+        self.public = public
+        self.collaborative = collaborative
+        self.url = url
+        self.images = images
+        self.primary_color = primary_color
+        self.uri = uri 
+        self.id = playlist_id
+
+    def __str__(self):
+        return (f"Playlist: {self.name}-{self.owner}" 
+                + f"[description: {self.description} public: {self.public} collaborative: {self.collaborative} id: {self.id} uri: {self.uri}]")
+
+def createPlaylist(playlist_info):
+    # print('creating playlist: ', playlist_info)
+    playlist = Playlist(
+        name = playlist_info['name'],
+        description = playlist_info['description'],
+        owner = playlist_info['owner'], #user obj?
+        tracks = playlist_info['tracks'],
+        public = playlist_info['public'],
+        collaborative = playlist_info['collaborative'], 
+        url = playlist_info['external_urls']['spotify'],
+        primary_color = playlist_info['primary_color'],
+        images = playlist_info['images'],
+        uri = playlist_info['uri'],
+        playlist_id = playlist_info['id']
+    )
+    # print(playlist)
+    return playlist
+
+
 
 
 
 #   ---   functions   ---
+
+
+
+#checks access token expirery in evironment variabes
+def checkAccessToken(expTime: str  = ''):
+    expireTime = expTime if expTime else os.getenv('Expire_Time')
+    if expireTime:
+        accessTokenTime = datetime.fromisoformat(expireTime)
+        return accessTokenTime >= datetime.now()
+    raise HTTPException(status_code=500, detail="Server Initalization Error")
 
 #sets environ valraibles form contianer secrets 
 def setSecrets():
@@ -62,59 +228,60 @@ def setSecrets():
         # os.environ['Expire_Time'] = data[5].split(" = ")[1]
         return True
     raise HTTPException(status_code=500, detail="Server Initalization Error")
-
-  
+    
 #refreshes access token
-#TODO test
-def refreshToken(refreshToken: str):
-    if refreshToken: # can be refreshed 
-        response = requests.post(
-            TOKEN_URL, 
-            data={
-                'grant_type': 'refresh_token',
-                'refresh_token':refreshToken,
-                'client_id': os.getenv("client_id"),
-                'client_secret': os.getenv("client_secret")
-            }, 
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        )
-        if 199 < response.status_code < 400:
-            print('success response')
-            newTokenInfo = response.json() 
-            if 'access_token' in newTokenInfo:
-                accessTokenTime = datetime.now().timestamp() + newTokenInfo['expires_in']
-                return newTokenInfo['access_token'], str(datetime.fromtimestamp(accessTokenTime))
-            
-        print('refresh error', response)
-        raise HTTPException(status_code=500, detail="Bad Server Refresh Request Response")
-    raise HTTPException(status_code=500, detail="Refresh method call Error")
+def refreshToken(refreshToken: str =''):
+    refreshTkn = refreshToken if refreshToken else os.getenv('Refresh_Token')
+    if refreshTkn: # can be refreshed 
+        if not checkAccessToken(): # needed? double checks if accessToken valid
+            response = requests.post(
+                TOKEN_URL, 
+                data={
+                    'grant_type': 'refresh_token',
+                    'refresh_token':refreshTkn,
+                    'client_id': os.getenv("client_id"),
+                    'client_secret': os.getenv("client_secret")
+                }, 
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            )
+            if 199 < response < 400:
+                newTokenInfo = response.json() 
+                if 'access_token' in newTokenInfo:
+                    accessTokenTime = datetime.now().timestamp() + newTokenInfo['expires_in']
+                    #TODO return vals for cookies
+                    os.putenv('Access_Token', newTokenInfo['access_token']) 
+                    os.putenv('Expire_Time', datetime.fromtimestamp(accessTokenTime) ) 
+                    return True
+            raise HTTPException(status_code=500, detail="Bad Server Refresh Request Response")
+        else:
+            return True #no token refresh needed 
+    raise HTTPException(status_code=500, detail="Server Initalization Error")
 
+#querys spoitfy api 
+    #TODO make Cookie based
 #errs 
 #   bad response
 #   auth prob
-def querySpotify(accessToken: str, expTime: str, endpoint: str = ''): 
+def querySpotify(endpoint: str = ''): 
     print('Querying')
-
-    if endpoint and datetime.fromisoformat(expTime) > datetime.now() and accessToken:
+    if endpoint and checkAccessToken():
         response = requests.get(
             f"{API_BASE_URL}{endpoint}", 
             headers={
-                'Authorization': 'Bearer '+ accessToken
+                'Authorization': 'Bearer '+ os.getenv('Access_Token', default='')
             }
         )
-
-        if 199 < response.status_code < 400: 
+        
+        if 199 < response.status_code < 300: 
             info = response.json()
             info.update({'status':'success'})
-            print('token  success')
             return info
-        print('request error ', 'response:', response)
-        return {"status":'error', 'details': 'bad response'}   
+        else:  
+            return {"status":'error'}   
     else:   #token error ||  endpoint type error
-        print('param error')
-        return {"status":'error', 'details': 'param error'}         
+        return {"status":'error'}         
         
 
 
@@ -126,90 +293,101 @@ def read_root():
 
 
 
+
+
 #---    Spotify Account Endpoints   ---
 
 
 #errs
 #   init app cred
 @app.get("/login", summary="Logs into spotify")
-def login(userCred: Annotated[userCredCookies, Cookie()]):
+def login():
     print('login endpt')
-    if setSecrets(): #for api auth data 
-        if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-            print('cookies found')
-            return RedirectResponse(frontendURL+'home')
-        else:
-            print('cookies not found')
-            return RedirectResponse(f"{AUTH_URL}?response_type=code&client_id={os.getenv('client_id')}&scope={scope}&redirect_uri={REDIRECT_URI}&show_dialog=True")
-    print('secrets error')
+    if setSecrets():
+        return RedirectResponse(f"{AUTH_URL}?response_type=code&client_id={os.getenv('client_id')}&scope={scope}&redirect_uri={REDIRECT_URI}&show_dialog=True")
     return 'error'
-    
 
 #errs 
 #   bad resp - no auth code
 #   bad reso - auth token info
 #   bad query/app init err - no usr dir
-#TODO make cookie acccessable in client
+#TODO test
+
 @app.get("/callback/", summary="Callback endpoint for spotify Login")
 def callback(code: str | None = None):
     print('callback endpt')
-    if code:
-        idSecret = os.getenv('client_id')+":"+os.getenv('client_secret')
-        bytesS = idSecret.encode("utf-8")
-        auth_base64 = str(base64.b64encode(bytesS), "utf-8")
-        resp = requests.post(
-            TOKEN_URL, 
-            data= {
-                'code': code,
-                'grant_type': 'authorization_code',
-                'redirect_uri': REDIRECT_URI,         
-            }, 
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': "Basic "+ auth_base64
-            }
-        )
+    
+    if not code:
+        'error'
 
-        if 199 < resp.status_code < 300:
-            token_info = resp.json()
-            accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
+    idSecret = os.getenv('client_id')+":"+os.getenv('client_secret')
+    bytesS = idSecret.encode("utf-8")
+    auth_base64 = str(base64.b64encode(bytesS), "utf-8")
 
-            ### ALT ###
-            os.environ['Access_Token'] = str(token_info['access_token'])
-            os.environ['Refresh_Token'] = str(token_info['refresh_token'])
-            os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
-            
-            response = RedirectResponse(frontendURL+'home')
+    resp = requests.post(
+        TOKEN_URL, 
+        data= {
+            'code': code,
+            'grant_type': 'authorization_code',
+            'redirect_uri': REDIRECT_URI,         
+        }, 
+        headers={
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': "Basic "+ auth_base64
+        }
+    )
+    if 199 < resp.status_code < 300:
+        token_info = resp.json()
+        accessTokenTime = datetime.now().timestamp() + token_info['expires_in']
 
-            response.set_cookie(key='callback', value='test', domain='.localhost:5137')
+        ### ALT ###
+        os.environ['Access_Token'] = str(token_info['access_token'])
+        os.environ['Refresh_Token'] = str(token_info['refresh_token'])
+        os.environ['Expire_Time'] = str(datetime.fromtimestamp(accessTokenTime))
+        
+        response = RedirectResponse('http://localhost:5137/home')
+    #TODO integrate Cookies
+        # maxAge = 60*60*24*7
+        # response.set_cookie(key='access_token', value=str(token_info['access_token']), max_age=maxAge)
+        # response.set_cookie(key='refresh_token', value=str(token_info['refresh_token']), max_age=maxAge)
+        # response.set_cookie(key="expire_time", value=str(datetime.fromtimestamp(accessTokenTime)), max_age=maxAge)
 
-            #makeUser specific dir (if not exists )
-            exists = False
-            usrQuery = querySpotify(os.environ['Access_Token'], os.environ['Expire_Time'], 'me')
-            if usrQuery['status'] == 'success':
-                usrID = usrQuery['id']
-                for dir in os.scandir():
-                    if (dir.name == usrID):
-                        exists = True
-                if (not exists):
-                    os.mkdir(usrID)
+        #makeUser specific dir (if not exists )
+        exists = False
+        usrQuery = querySpotify('me')
+        if usrQuery['status'] == 'success':
+            usrID = usrQuery['id']
 
-                print('callback success')
-                return response
-            #no usr dir - no toText
-    print('callback error')
+            for dir in os.scandir():
+                if (dir.name == usrID):
+                    exists = True
+
+            if (not exists):
+                os.mkdir(usrID)
+        
+            return response
+        #no usr dir - no toText
     return 'error'
 
-#TODO test redirect
+#TODO errs in helper functions
+@app.get('/refresh', summary="Refreshes user's spotify access token")
+def refresh():
+    print('refresh endpt')
+    if refreshToken(): 
+        # return RedirectResponse('http://localhost:5173/home')
+        return {'status': 'success'}
+    return 'error'
+
 @app.get('/logout', summary="Clears user's spotify access data from server")
-def logout(response: Response ):
+def logout():
     print('logout endpt')
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
-    response.delete_cookie("expire_time")
-    # return 'success'
+    resp = RedirectResponse(frontendURL)
+    resp.delete_cookie("access_token")
+    resp.delete_cookie("refresh_token")
+    resp.delete_cookie("expire_time")
+    
     print('log out success')
-    return RedirectResponse(frontendURL)
+    return resp
 
 
 
@@ -223,425 +401,286 @@ def termValidator(term:str):
 #errs 
 #   query failure
 @app.get('/user', summary="Returns user's profile info")
-def user(
-    userCred: Annotated[userCredCookies, Cookie()], 
-    response: Response):
-
+def user(userCred: Annotated[userCredCookies, Cookie()]): 
     print('user endpt')
-    userInfo = None
+    print('user cred cookies:', userCred)
+    userInfo = querySpotify('me')
 
-    if not (userCred.access_token or userCred.refresh_token or userCred.expire_time):
-        print('no cookies')
-        if os.getenv('Access_Token') and os.getenv('Refresh_Token') and os.getenv('Expire_Time'):
-            response.set_cookie(key='access_token', value=os.environ['Access_Token'])
-            response.set_cookie(key='refresh_token', value=os.environ['Refresh_Token'])
-            response.set_cookie(key="expire_time", value=os.environ['Expire_Time'])
-            
-            userInfo = querySpotify(os.environ['Access_Token'], os.environ['Expire_Time'], 'me')    
+    if userInfo['status'] == 'success':
+        return {'user': createUser(userInfo), 'logged': 'true', 'status': 'success'}
     else:
-        print('cookies')
-        if datetime.fromisoformat(str(userCred.expire_time)) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            userInfo = querySpotify(accessTok, expTime, 'me')
-        else:
-            print('cookie querry')
-            userInfo = querySpotify(
-                accessToken=userCred.access_token, 
-                expTime=userCred.expire_time, 
-                endpoint='me')
-
-    if userInfo and userInfo['status'] == 'success':
-        userInfo.update({'logged':'true'})
-        return userInfo
-
-    print('user endpt - error')       
-    return 'error'
+        print(userInfo)
+        return 'error'
 
 #errs 
 #   query failure
-#cookie required data
 @app.get('/savedSongs', summary="Returns user's saved songs")
-def savedSongs(
-    response: Response,
-    userCred: Annotated[userCredCookies, Cookie()], 
-    offset: Annotated[int, Query(ge=0)] = 0, 
-    limit: Annotated[int, Query(ge=15, le=50)] = 50):
-
+def savedSongs(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('savedSongs endpt')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
+    savedSongs = querySpotify(f'me/tracks?offset={offset}&limit={limit}')
 
-            savedSongs = querySpotify(accessTok, expTime, f'me/tracks?offset={offset}&limit={limit}')    
-        else:
-            savedSongs = querySpotify(userCred.access_token, userCred.expire_time, f'me/tracks?offset={offset}&limit={limit}')    
+    if savedSongs['status'] == 'success' and savedSongs:
+        saved_songs = []
+        for track in savedSongs['items']:
+            saved_songs.append(createTrack(track['track'], track['added_at']))
         
-        if savedSongs and savedSongs['status'] == 'success':
-            return savedSongs
-    
-    print('savedSongs endpt - error')
-    return 'error'
+        return {'tracks':saved_songs, 'status':'success', 'total': savedSongs['total']}
+    else:
+        return 'error'
 
-
+#TODO can send progress to client?
 #errs 
 #   query failure
 #   bad resp
-#TODO send progress to client?
 @app.get('/savedSongs/toText', response_class=FileResponse, summary="Returns text file of users saved songs")
-def savedSongsToText(response: Response, userCred: Annotated[userCredCookies, Cookie()], ):
-
+def savedSongsToText():
     print('\nsaved songs toText')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            userInfo = querySpotify(accessTok, expTime, 'me')
-        else:
-            userInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me')
-    
-        if userInfo['status'] == 'success':#creating file of saved songs
-            filename = 'savedSongs'
-            path = f"{userInfo['id']}/{filename}.txt"
-            f = open(path, 'w')
-            f.write("Format: Song, album - artists \n\n")
+ 
+    userInfo = querySpotify('me')
+    if userInfo['status'] == 'success': #creating file of saved songs
+        filename = 'savedSongs'
+        path = f"{userInfo['id']}/{filename}.txt"
+        f = open(path, 'w')
+        f.write("Format: Song, album - artists \n\n")
         
-            size = 0
-            nextTracks = f'{API_BASE_URL}{f'me/tracks?offset={0}&limit={50}'}'
+        size = 0
+        nextTracks = f'{API_BASE_URL}{f'me/tracks?offset={0}&limit={50}'}'
+        while nextTracks and size < 10000:
+            resp = requests.get(
+                nextTracks,
+                headers={
+                    'Authorization': 'Bearer '+ os.getenv('Access_Token')
+                }
+            )
+            if 199 < resp.status_code < 300:
+                resp = resp.json()
 
-            while nextTracks and size < 10000:
-                resp = requests.get(
-                    nextTracks,
-                    headers={
-                        'Authorization': 'Bearer '+ userCred.access_token
-                    }
-                )
-                if 199 < resp.status_code < 300:
-                    resp = resp.json()
-
-                    for track in resp['items']:
-                        name = track['track']['name']
-                        album = track['track']['album']['name']
-                        
-                        #TODO get all artist + features (str formating)
-                        artists = track['track']['artists']
-                        artistNames = ''
-                        for artist in artists:
-                            if artist['type'] == 'artist':
-                                artistNames = artist['name'] + ', '
-                        
-                        f.write(f'{name}, {album} - {artistNames}\n')
-                        size += 1
-
-                        # print(f'{name}, {album} - {artistNames}')
-                        print(f"saved song progress {size}/{resp['total']}" )
+                for track in resp['items']:
+                    name = track['track']['name']
+                    album = track['track']['album']['name']
                     
-                    nextTracks = resp['next']
-                else:
-                    #error
-                    print('error loading tracks ', resp.status_code)
-                    nextTracks = None
-            f.close()
+                    #TODO get all artist + features
+                    artists = track['track']['artists']
+                    artistNames = ''
+                    for artist in artists:
+                        if artist['type'] == 'artist':
+                            artistNames = artist['name'] + ', '
+                    
+                    f.write(f'{name}, {album} - {artistNames}\n')
+                    size += 1
 
-            print('Songs Saved: ', size)
-            return path
+                    print(f'{name}, {album} - {artistNames}')
+                    print(f"saved song progress {size}/{resp['total']}" )
 
-    print('savedSong(toText) endpt -  error')
+                nextTracks = resp['next']
+                # print('next url: ', nextTracks)
+            else:   #error   
+                print('error loading tracks ', resp.status_code)
+                nextTracks = None
+        f.close()
+
+        print('Songs Saved: ', size)
+        return path
     return 'error'
 
 #errs 
 #   query failure
 @app.get('/topArtists', summary="Returns users's top artists")
-def topArtists(
-    response: Response,
-    userCred: Annotated[userCredCookies, Cookie()], 
-    term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, 
-    limit: Annotated[int, Query(ge=15, le=50)] = 50):
-
+def topArtists(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('topArtist endpt')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time and termValidator(term):
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            topArtists = querySpotify(accessTok, expTime, f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
-        else:
-            topArtists = querySpotify(userCred.access_token, userCred.expire_time, f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
     
-        if topArtists['status'] == 'success':
-            return topArtists
+    if termValidator(term):
+        topArtists = querySpotify(f'me/top/artists?time_range={term}_term&limit={limit}&offset={offset}')
+    if topArtists and topArtists['status'] == 'success':
+        top_artists = []
+        for artist in topArtists['items']:
+            top_artists.append(createArtist(artist))
+        return {'artists': top_artists, 'status': 'success', 'total': topArtists['total']}
     
-    print('topArtists endpt - error')
-    return 'error'
+    return 'Error'
 
 #errs 
 #   query failure
 @app.get('/topTracks', summary="Returns users's top tracks")
-def topTracks(
-    response: Response,
-    userCred: Annotated[userCredCookies, Cookie()], 
-    term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, 
-    limit: Annotated[int, Query(ge=15, le=50)] = 50):
+def topTracks(term: str='medium', offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('topTracks endpt')
     
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time and termValidator(term):
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            topTracks = querySpotify(accessTok, expTime, f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
-        else:
-            topTracks = querySpotify(userCred.access_token, userCred.expire_time, f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
+    if termValidator(term):
+        topTracks = querySpotify(f'me/top/tracks?time_range={term}_term&limit={limit}&offset={offset}')
+    if topTracks and topTracks['status'] == 'success':
+        top_tracks = []
+        for track in topTracks['items']:
+            top_tracks.append(createTrack(track))
+        return {'tracks': top_tracks, 'total': topTracks['total'], 'status': 'success'}
     
-        if topTracks['status'] == 'success':
-            return topTracks
-    
-    print('topTracks endpt - error')
     return 'Error'
 
 
 #---    Playlist Endpoint    ---
-
+    #TODO: http Errors [exceptions on failed queries]
 #errs 
 #   query failure
 @app.get('/playlists', summary="Returns user's playlists")
-def playlists(
-    response: Response, 
-    userCred: Annotated[userCredCookies, Cookie()], 
-    offset: Annotated[int, Query(ge=0)] = 0, 
-    limit: Annotated[int, Query(ge=15, le=50)] = 50):
-    
+def playlists(offset: Annotated[int, Query(ge=0)] = 0, limit: Annotated[int, Query(ge=15, le=50)] = 50):
     print('playlist endpt')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
+    playlistsInfo = querySpotify(f'me/playlists?offset={offset}&limit={limit}')
 
-            playlistsInfo = querySpotify(accessTok, expTime, f'me/playlists?offset={offset}&limit={limit}')
-        else:
-            playlistsInfo = querySpotify(userCred.access_token, userCred.expire_time, f'me/playlists?offset={offset}&limit={limit}')
+    if playlistsInfo['status'] == 'success':
+        playlists = []
+        for playlist in playlistsInfo['items']:
+            playlists.append(createPlaylist(playlist))
+        
+        return {'playlists': playlists, 'status': 'success', 'total': playlistsInfo['total']}
 
-        if playlistsInfo['status'] == 'success':
-            playlistsInfo.update({'logged':'true'})
-            return playlistsInfo 
-
-    print('playlist endpt - error')
     return 'error'
 
 #check spotify playlist id restrictions for path checks
+#TODO dont use makefile function
 @app.get('/playlist/toText/{playlistID}', response_class=FileResponse, summary="Returns text file of tracks in user's playlists")
-def toText(
-    response: Response,
-    userCred: Annotated[userCredCookies, Cookie()], 
-    playlistID: str):
-
+def toText(playlistID: str):
     print(f'\n---toText {playlistID} endpt---\n')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            playlistInfo = querySpotify(accessTok, expTime, f'playlists/{playlistID}')
-            userInfo = querySpotify(userCred.access_token, expTime, 'me')
-        else:
-            playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, f'playlists/{playlistID}')
-            userInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me')
+    playlistInfo = querySpotify(f'playlists/{playlistID}')
+    userInfo = querySpotify('me')
         
-        if playlistInfo['status'] == 'success' and userInfo['status'] == 'success': 
-            path = f"{userInfo['id']}/{playlistInfo['name']}.txt"
-            f = open(path, 'w')
-            f.write("Format: Song, album - artists \n\n")
-            size = 0
+    if playlistInfo['status'] == 'success' and userInfo['status'] == 'success' and playlistInfo['tracks']:
+        path = f"{userInfo['id']}/{playlistInfo['name']}.txt"
+        f = open(path, 'w')
+        f.write("Format: Song, album - artists \n\n")
+        for track in playlistInfo['tracks']:
+            name = track['track']['name']
+            album = track['track']['album']['name']
             
-            print('playlisttoText tracks: ', playlistInfo['tracks']['total'])
-
-            for track in playlistInfo['tracks']['items']:
-                print('name: ', track['track']['name'])
-                print('album: ', track['track']['album']['name'])
-                
-                #TODO get all artist + features (str formating)
-                artistNames = ''
-                for artist in track['track']['artists']:
-                    if artist['type'] == 'artist':
-                        artistNames = artist['name'] + ', '
-                
-                f.write(f'{track['track']['name']}, {track['track']['album']['name']} - {artistNames}\n')
-                size += 1
-
-                print(f'{track['track']['name']}, {track['track']['album']['name']} - {artistNames}')
-                print(f"saved song progress {size}/{playlistInfo['tracks']['total']}" )
+            #TODO get all artist + features
+            artists = track['track']['artists']
+            artistNames = ''
+            for artist in artists:
+                if artist['type'] == 'artist':
+                    artistNames = artist['name'] + ', '
             
-            f.close()        
-            return path
+            f.write(f'{name}, {album} - {artistNames}\n')
+            size += 1
 
-    print('playlist(toText) endpt - error')
+            print(f'{name}, {album} - {artistNames}')
+            print(f"saved song progress {size}/{playlistInfo['total']}" )
+        f.close()        
+        return path
+    
     return 'error'
 
 #errs 
 #   query failure
 @app.get('/playlist/{playlistID}', summary="Returns information on user playlist")
-def playlist(
-    response: Response,
-    userCred: Annotated[userCredCookies, Cookie()], 
-    playlistID: str):
-
+def playlist(playlistID: str):
     print(f'playlist {playlistID} endpt')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
 
-            playlistInfo = querySpotify(accessTok, expTime, f'playlists/{playlistID}')
-        else:
-            playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, f'playlists/{playlistID}')
+    playlistInfo = querySpotify(f'playlists/{playlistID}')
+    if playlistInfo['status'] == 'success':
+        createPlaylist(playlistInfo)
+        return playlistInfo
     
-        if playlistInfo['status'] == 'success':
-            return playlistInfo
-
-    print(f'playlist {playlistID} endpt - error')    
-    return 'error'
+    return 'Error'
 
 #errs 
 #   query failure
 #   bad resp
 @app.post('/toListenTo', summary="Adds track to toListenTo playlist") 
-def addtoListenTo(response: Response, userCred: Annotated[userCredCookies, Cookie()], songURI: Annotated[str, Body()]):
+def addtoListenTo(songURI: Annotated[str, Body()]):
+    print('toListenTo post endpt')
+    print('adding: ', songURI)
+
+    toListenTo = '' # add to file for fast access on second time
+    playlistInfo = querySpotify('me/playlists?limit=50')
+
+    if playlistInfo['status'] == 'succes':        
     
-    print('toListenTo post endpt','\tadding: ', songURI)
-    toListenTo = ''
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
+        while (playlistInfo['next']):   #finding toListenTo
+            for playlist in playlistInfo['items']:
+                if (playlist["description"] == 'toListenTo'):
+                    toListenTo = playlist['id']
+                    break           
+            resp = requests.get(playlistInfo['next'], headers={'Authorization': 'Bearer '+ os.getenv('Access_Token')})
+            if 199 < resp.status_code < 300:
+                playlistInfo = resp.json()
+            else:
+                break
+                #error 
 
-            playlistInfo = querySpotify(accessTok, expTime, 'me/playlists?limit=50')        
-        else:
-            playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me/playlists?limit=50')
+        if (toListenTo == ''): #creating playlist
+            userID = querySpotify('me')['id']  
+            res = requests.post(
+                url= API_BASE_URL+f'users/{userID}/playlists', 
+                json={
+                    "name":"toListenTo",
+                    "description":"toListenTo",
+                    "public":False
+                },
+                headers={'Authorization': 'Bearer '+ os.getenv('Access_Token')}
+            )
 
-        if playlistInfo['status'] == 'success':        
-            while (playlistInfo['next']):   #finding toListenTo
-                for playlist in playlistInfo['items']:
-                    if (playlist["description"] == 'toListenTo'):
-                        toListenTo = playlist['id']
-                        break           
-                resp = requests.get(playlistInfo['next'], headers={'Authorization': 'Bearer '+ userCred.access_token})
-                if 199 < resp.status_code < 300:
-                    playlistInfo = resp.json()
-                else:
-                    break
-                    #error 
+            if (199 < res.status_code < 300):
+                toListenTo = res.json()['id']
+                print("created: ", toListenTo)
+            # else:   #error
+    
+        print("adding to:", toListenTo)
+        if (toListenTo != ''):  # add song to playlist 
+            resp = requests.post(
+                url=API_BASE_URL+f'playlists/{toListenTo}/tracks', 
+                json= {"uris": [songURI]}, 
+                headers={'Authorization': 'Bearer '+ os.getenv('Access_Token')}
+            )
+            if (199 < resp.status_code < 300):
+                return {"status":"success", "id": toListenTo}
+            # else: # errror
 
-            if (toListenTo == ''): #creating playlist
-                userID = querySpotify('me')['id']  
-                res = requests.post(
-                    url= API_BASE_URL+f'users/{userID}/playlists', 
-                    json={
-                        "name":"toListenTo",
-                        "description":"toListenTo",
-                        "public":False
-                    },
-                    headers={'Authorization': 'Bearer '+ userCred.access_token}
-                )
-
-                if (199 < res.status_code < 300):
-                    toListenTo = res.json()['id']
-                    print("created: ", toListenTo)
-                # else:   #error
-        
-            
-            print("adding to:", toListenTo)
-            if (toListenTo != ''):  # add song to playlist 
-                resp = requests.post(
-                    url=API_BASE_URL+f'playlists/{toListenTo}/tracks', 
-                    json= {"uris": [songURI]}, 
-                    headers={'Authorization': 'Bearer '+ userCred.access_token}
-                )
-                if (199 < resp.status_code < 300):
-                    return {"status":"success", "id": toListenTo}
-                # else: # errror
-
-    print('post toListenTo endpt - error')
     return "error"
 
 #errs 
 #   query failure
 #   bad resp
 @app.get('/toListenTo', summary='Returns Information for toListenTo playlist')
-def getToListenTo(response:Response, userCred: Annotated[userCredCookies, Cookie()],):
-
+def getToListenTo():
     print('toListenTo get endpt')
+
     toListenTo = ''
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time:
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            playlistInfo = querySpotify(accessTok, expTime, 'me/playlists?limit=50')
-        else:
-            print('cookie querry')
-            playlistInfo = querySpotify(userCred.access_token, userCred.expire_time, 'me/playlists?limit=50')
-
-        if playlistInfo['status'] == 'success':  
-            while (playlistInfo['next']):   #finding toListenTo
-                for playlist in playlistInfo['items']:
-                    if (playlist["description"] == 'toListenTo'):
-                        toListenTo = playlist['id']
-                        break           
-                
-                resp = requests.get(
-                    playlistInfo['next'], 
-                    headers={'Authorization': 'Bearer '+ userCred.access_token }
-                )
-                if 199 < resp.status_code < 300:
-                    playlistInfo = resp.json()
-                else:
-                    raise HTTPException(status_code=500, detail='Server Request Error')
+    playlistInfo = querySpotify('me/playlists?limit=50')
     
-            if (toListenTo == ''):  #creating playlist
-                userID = querySpotify('me')['id']
-                if playlistInfo['status'] == 'success':   
-                    resp = requests.post(
-                        url= API_BASE_URL+f'users/{userID}/playlists', 
-                        json={
-                            "name":"toListenTo",
-                            "description":"toListenTo",
-                            "public":False
-                        },
-                        headers={'Authorization': 'Bearer '+ userCred.access_token}
-                    )
-                    if (199 < resp.status_code < 300):
-                        toListenTo = resp.json()['id']
-                        print("created: ", toListenTo)
+    if playlistInfo['status'] == 'success':  
 
-            if toListenTo:
-                return {"id": toListenTo, 'status': 'success'}
-
+        while (playlistInfo['next']):   #finding toListenTo
+            for playlist in playlistInfo['items']:
+                if (playlist["description"] == 'toListenTo'):
+                    toListenTo = playlist['id']
+                    break           
+            resp = requests.get(
+                playlistInfo['next'], 
+                headers={'Authorization': 'Bearer '+ os.getenv('Access_Token') }
+                )
+            if 199 < resp.status_code < 300:
+                playlistInfo = resp.json()
+            else:
+                raise HTTPException(status_code=500, detail='Server Request Error')
+   
+        if (toListenTo == ''): #creating playlist
+            userID = querySpotify('me')['id']
+            if playlistInfo['status'] == 'success':   
+                resp = requests.post(
+                    url= API_BASE_URL+f'users/{userID}/playlists', 
+                    json={
+                        "name":"toListenTo",
+                        "description":"toListenTo",
+                        "public":False
+                    },
+                    headers={'Authorization': 'Bearer '+ os.getenv('Access_Token') }
+                )
+                if (199 < resp.status_code < 300): #!!!TODO check can good resp have bad data
+                    toListenTo = resp.json()['id']
+                    print("created: ", toListenTo)
+        
+    if toListenTo:
+        return {"id": toListenTo}
     
     # raise HTTPException(status_code=500, detail="Error getting toListenTo playlist id")
-    print('getToListenTo endpt - error')
     return "error"
 
 
@@ -653,30 +692,16 @@ def itemTypeValidator(type):
 #errs 
 #   query failure
 @app.get('/search', summary="Returns search results of search string")
-def search(
-    response: Response, 
-    userCred: Annotated[userCredCookies, Cookie()], 
-    searchstr: str, 
-    itemType: str = "track", 
-    offset: Annotated[int, Query(ge=0)] = 0):
-
-    print('search endpt')
-    if userCred.access_token and userCred.refresh_token and userCred.expire_time and itemTypeValidator(itemType):
-        if datetime.fromisoformat(userCred.expire_time) <= datetime.now():
-            print('refesh querry')
-            accessTok, expTime = refreshToken(userCred.refresh_token)
-            response.set_cookie(key='access_token', value=accessTok)
-            response.set_cookie(key="expire_time", value=expTime)
-
-            itemInfo = querySpotify(accessTok, expTime, f'search?q={searchstr}&type={itemType}&limit=50&offset={offset}')
-        else:
-            itemInfo = querySpotify(userCred.access_token, userCred.expire_time, f'search?q={searchstr}&type={itemType}&limit=50&offset={offset}')
+def toListenTo(searchstr: str, itemType: str = "track", offset: Annotated[int, Query(ge=0)] = 0):
+    print('search url params: ',offset, itemType)
     
-        if itemInfo['status'] == 'success':
-            return itemInfo
+    if itemTypeValidator(itemType):
+        itemInfo = querySpotify(f'search?q={searchstr}&type={itemType}&limit=50&offset={offset}')
+    if itemInfo['status' == 'success']:
+        return itemInfo
     
+    print('Query Status: ', itemInfo['status'])
     # raise HTTPException(status_code=500, detail='Error getting Search Results')
-    print('search endpt - error')
     return "error"
 
 

@@ -24,7 +24,7 @@ export default function TopTracks({navBtns = false}) {
             .then(data => {
                     console.log('Top Track data: ', data)
                     if (data.status == 'success') {
-                        setTopTracks(data.items)
+                        setTopTracks(data.tracks)
                         setTotal(data.total)
                     } else throw Error('Bad resp data');
             })

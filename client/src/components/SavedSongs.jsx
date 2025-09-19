@@ -20,7 +20,7 @@ export default function SavedSongs() {
             .then( data => {
                 console.log('Saved songs page: ', data)
                 if (data.status == "success") {
-                    setSongs(data.items)
+                    setSongs(data.tracks)
                     setTotal(data.total)
                 } else throw Error('Bad Data Error');
             })
@@ -111,9 +111,9 @@ export default function SavedSongs() {
                 {typeof songs != 'undefined'? 
                     songs.length > 0? 
                         songs.map(t => 
-                            <li key={t.track.id} className="list-group-item"> 
-                                <TrackCard track={t.track} height={125} width={125}/> 
-                                <p>Date Added: {Date(t.added_at)}</p>
+                            <li key={t.id} className="list-group-item"> 
+                                <TrackCard track={t} height={125} width={125}/> 
+                                {/* <p>Date Added: {Date(t.added_date)}</p> */}
                             </li>
                         ) 
                         :'No Saved Songs' 

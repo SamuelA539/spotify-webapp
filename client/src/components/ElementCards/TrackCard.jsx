@@ -1,7 +1,10 @@
+import { useEffect } from "react"
 import '../../styles/TrackCard.css'
 
 
 export default function TrackCard({track, height, width}) {
+    console.log('track: ', track)
+    
     if (Object.keys(track).length > 0 ) {
         var artists = []
         if (typeof track != 'undefined' && typeof track.artists != undefined){
@@ -24,8 +27,10 @@ export default function TrackCard({track, height, width}) {
                 </div>
 
                 <div>
-                    <a href={track.external_urls.spotify} target="_blank">  <h4>{track.name}</h4>   </a>
-                    <a href={track.album.external_urls.spotify} target="_blank">    <h5>Album: {track.album.name}</h5>     </a>
+                    <a href={track.url} target="_blank">  
+                        <h4>{track.name}</h4>   </a>
+                    <a href={track.album.external_urls.spotify} target="_blank">    
+                        <h5>Album: {track.album.name}</h5>  </a>
                     <h5>by {artistStr}</h5>
 
                     <h6>Released: {track.album.release_date}</h6>

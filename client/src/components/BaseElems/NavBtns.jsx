@@ -22,6 +22,7 @@ export default function NavBtns({pageSize, offset, total, fwrdFn, bckwrdFn}){
                     :null}
                 </span>
             </span>  
-        </section>   
+        </section>
+        
     )
 }

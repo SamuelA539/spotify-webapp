@@ -22,12 +22,13 @@ export default function PlaylistCard({playlist, size=150}) {
                     width={size}
                 > </img>
                 <div>
-                    <a href={playlist.external_urls.spotify} target="_blank"><h3>{playlist.name}</h3></a>
+                    <a href={playlist.url} target="_blank"><h3>{playlist.name}</h3></a>
                     <h5>Num Tracks: {playlist.tracks.total}</h5>
                     <h6>Visibility: {playlist.public ? 'Public': 'Private'}</h6>
                 </div>
             </div>
-            
+
+            {/* OWNER INFO ??  */}
             <div className='descriptionDiv'>
                 <h6>Desription:</h6>
                 <p>{playlist.description == '' ? 'N/A':playlist.description}</p>

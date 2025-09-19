@@ -50,8 +50,8 @@ export default function NavBar() {
                                     if (data == 'success'){
                                         console.log('logged out');
                                         fetch('http://localhost:5137/')
-                                    }//, window.location.reload();
-                                    else throw Error('logout error')
+                                        //, window.location.reload();
+                                    } else throw Error('logout error')
                                 })
                             })
                             .catch(err=>{console.warn('logout error')})

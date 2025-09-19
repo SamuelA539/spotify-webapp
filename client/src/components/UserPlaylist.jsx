@@ -28,7 +28,7 @@ export default function UserPlaylists() {
                 console.log('playlist page-playlist: ', data)
                 if (data.status == "success") { 
                     setTotalPlaylists(data.total)
-                    setPlaylists(data.items)
+                    setPlaylists(data.playlists)
                 }else throw Error('Bad resp data');
             })
             .catch( err => {
@@ -69,11 +69,9 @@ export default function UserPlaylists() {
     if (Object.keys(errFlg).length > 0 && errFlg.status) {
         switch(errFlg.errType) {
             case('data'):
-                throw DataError(errFlg.msg)
-                break
+                throw new DataError(errFlg.msg)
             case('fetch'):
-                throw FetchError(errFlg.msg)
-                break
+                throw new FetchError(errFlg.msg)
         }
     } 
     

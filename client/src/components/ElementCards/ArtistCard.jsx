@@ -1,6 +1,7 @@
 import '../../styles/ArtistCard.css'
 
 export default function ArtistCard({artist, size=150}) {
+    console.log(artist)
     var res = ''
     if (typeof artist != 'undefined' && typeof artist.genres != undefined){
         for (var i in artist.genres) {
@@ -29,13 +30,10 @@ export default function ArtistCard({artist, size=150}) {
                 width={size}/>
             </div> 
             <div>
-                <a href={artist.external_urls.spotify}><h3>{artist.name}</h3></a>
-                {/* <h6>({artist.type})</h6> */}
-                
-                <h4>Info</h4>
+                <a href={artist.url}><h3>{artist.name}</h3></a>                
                 <h5>Genres: {genresStr}</h5>
                 <h6>General Popularity: {artist.popularity}/100</h6>
-                <h6>Followers: {artist.followers.total}</h6>
+                <h6>Followers: {artist.follower_count}</h6>
             </div>
         </div>
     )
